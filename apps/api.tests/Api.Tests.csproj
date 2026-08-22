@@ -30,6 +30,7 @@
     <Compile Include="DocumentLibraryTests.cs" />
     <Compile Include="IssueProtocolTests.cs" />
     <Compile Include="DailyTests.cs" />
+    <Compile Include="InboxTests.cs" />
     <Compile Include="TestCollection.cs" />
     <ProjectReference Include="..\api\EnterpriseStarter.Api.csproj" />
     <ProjectReference Include="..\companion\EnterpriseStarter.Companion.csproj" />

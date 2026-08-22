@@ -32,6 +32,7 @@ public sealed class CompanionModule : IEnterpriseModule
         services.AddScoped<DocumentService>();
         services.AddScoped<IssueService>();
         services.AddScoped<DailyService>();
+        services.AddScoped<InboxService>();
         services.AddScoped<IAfterSignInHandler>(provider => provider.GetRequiredService<ProjectService>());
         services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, AiClientAuthenticationHandler>(AiClientAuth.Scheme, _ => { });
@@ -50,6 +51,7 @@ public sealed class CompanionModule : IEnterpriseModule
             .WithTools<DocumentTools>()
             .WithTools<IssueTools>()
             .WithTools<DailyTools>()
+            .WithTools<InboxTools>()
             .WithResources<ProjectContextResources>();
     }
 
@@ -128,6 +130,7 @@ public sealed class CompanionModule : IEnterpriseModule
         DocumentEndpoints.Map(endpoints);
         IssueEndpoints.Map(endpoints);
         DailyEndpoints.Map(endpoints);
+        InboxEndpoints.Map(endpoints);
 
         var clients = endpoints.MapGroup("/api/v1/ai-clients")
             .RequireAuthorization(CompanionPermissions.AiClientsManage);
