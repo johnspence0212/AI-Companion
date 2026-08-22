@@ -15,9 +15,19 @@ The concise, high-signal Markdown document that orients a human or AI client to 
 Project's goal, current state, decisions, constraints, and priorities.
 _Avoid_: Project summary, dashboard
 
-**Note**:
-Durable Markdown knowledge belonging to a Project.
-_Avoid_: Document, page
+**Document**:
+Durable Markdown knowledge belonging to a Project, including essays, notes, research,
+journals, and other authored material.
+_Avoid_: Note, page
+
+**Folder**:
+A nested organizational container for Documents within one Project.
+_Avoid_: Project, label
+
+**Saved View**:
+A reusable table or list configuration over a first-class entity, including its visible
+columns, filters, sorting, and grouping.
+_Avoid_: Custom database, arbitrary schema
 
 **Issue**:
 The universal tracked unit of work within a Project. Labels distinguish executable work,
@@ -30,9 +40,9 @@ Issue.
 _Avoid_: Calendar event
 
 **Inbox Item**:
-An unclassified thought captured before deciding whether it should become a Note, Issue,
-or other Project information.
-_Avoid_: Issue, Note
+An unclassified thought captured before deciding whether it should become a Document,
+Issue, or other Project information.
+_Avoid_: Issue, Document
 
 **Session**:
 An attributed, bounded period of human or AI work that groups the records touched and
