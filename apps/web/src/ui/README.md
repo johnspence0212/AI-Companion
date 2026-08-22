@@ -69,20 +69,21 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ## App chrome (compose these in views)
 
-| Component                                             | Role                                           |
-| ----------------------------------------------------- | ---------------------------------------------- |
-| `PageBody`                                            | Page padding / vertical rhythm                 |
-| `PageHeader`                                          | Eyebrow, title, description, top-right actions |
-| `StatusMessage`                                       | Error / muted / success text                   |
-| `FormPanel`                                           | Auth/profile card form shell                   |
-| `FormSlideout` / `FormSection` / `FormField`          | Create/edit Sheet forms                        |
-| `MultiSelect`                                         | Multi-value selector for forms                 |
-| `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                              |
-| `DataTable`                                           | Dense bordered tables                          |
-| `WorkbenchPanes`                                      | Three-pane workbench (stacks on small screens) |
-| `MarkdownSource`                                      | Source Markdown editor with preview/copy       |
-| `SurfaceCard`                                         | Simple linked/static surface cards             |
-| `GuestShell` / `AppShell` / `AppSidebar` / `UserMenu` | Layout shells                                  |
+| Component                                             | Role                                              |
+| ----------------------------------------------------- | ------------------------------------------------- |
+| `PageBody`                                            | Page padding / vertical rhythm                    |
+| `PageHeader`                                          | Eyebrow, title, description, top-right actions    |
+| `StatusMessage`                                       | Error / muted / success text                      |
+| `FormPanel`                                           | Auth/profile card form shell                      |
+| `FormSlideout` / `FormSection` / `FormField`          | Create/edit Sheet forms                           |
+| `MultiSelect`                                         | Multi-value selector for forms                    |
+| `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                                 |
+| `DataTable`                                           | Dense bordered tables                             |
+| `WorkbenchPanes`                                      | Three-pane workbench (stacks on small screens)    |
+| `MarkdownSource`                                      | Source Markdown editor with preview/copy          |
+| `SavedViewBar`                                        | System/user Saved View picker inside destinations |
+| `SurfaceCard`                                         | Simple linked/static surface cards                |
+| `GuestShell` / `AppShell` / `AppSidebar` / `UserMenu` | Layout shells                                     |
 
 ## Approved recipes
 
@@ -103,7 +104,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ### Workbench destination
 
-`PageBody` → `PageHeader` → `WorkbenchPanes` (nav / list / detail). Open Document, Project Context, or Issue detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
+`PageBody` → `PageHeader` → `WorkbenchPanes` (nav / list / detail) with `SavedViewBar` as the list mode. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 

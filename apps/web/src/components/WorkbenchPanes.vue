@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <div class="space-y-4">
-    <p v-if="systemView" class="text-sm text-muted-foreground">System view: {{ systemView }}</p>
+    <p v-if="systemView" class="text-sm text-muted-foreground">View: {{ systemView }}</p>
     <div class="grid gap-6 lg:grid-cols-3">
       <SurfaceCard class="min-w-0">
         <h2 v-if="navTitle" class="mb-4 font-semibold">{{ navTitle }}</h2>

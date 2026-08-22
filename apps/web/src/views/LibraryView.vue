@@ -6,6 +6,8 @@ import {
   type LibraryDocument,
   type LibraryFolder,
 } from '@/api/documentsApi'
+import { viewsApi, type SavedView } from '@/api/viewsApi'
+import { applyDocumentView } from '@/lib/savedViews'
 import {
   Button,
   DataList,
@@ -18,16 +20,22 @@ import {
   MarkdownSource,
   PageBody,
   PageHeader,
+  SavedViewBar,
   StatusMessage,
   WorkbenchPanes,
 } from '@/ui'
 
 const documents = ref<LibraryDocument[]>([])
 const folders = ref<LibraryFolder[]>([])
+const views = ref<SavedView[]>([])
 const revisions = ref<DocumentRevision[]>([])
 const selectedFolderId = ref<string | 'all' | 'unfiled'>('all')
+const selectedViewId = ref<string | null>(null)
 const selectedId = ref<string | null>(null)
 const slideoutOpen = ref(false)
+const filterSlideoutOpen = ref(false)
+const filterName = ref('')
+const filterFolder = ref('all')
 const editingId = ref<string | null>(null)
 const title = ref('')
 const body = ref('')
@@ -42,16 +50,21 @@ const selected = computed(
   () => documents.value.find((document) => document.id === selectedId.value) ?? null,
 )
 
+const selectedView = computed(
+  () => views.value.find((view) => view.id === selectedViewId.value) ?? null,
+)
+
 const visibleDocuments = computed(() => {
+  const fromView = applyDocumentView(documents.value, selectedView.value)
   if (selectedFolderId.value === 'all') {
-    return documents.value
+    return fromView
   }
 
   if (selectedFolderId.value === 'unfiled') {
-    return documents.value.filter((document) => document.folderId === null)
+    return fromView.filter((document) => document.folderId === null)
   }
 
-  return documents.value.filter((document) => document.folderId === selectedFolderId.value)
+  return fromView.filter((document) => document.folderId === selectedFolderId.value)
 })
 
 const folderLabels = computed(() => {
@@ -87,12 +100,17 @@ async function loadLibrary() {
   loading.value = true
   error.value = null
   try {
-    const [documentItems, folderItems] = await Promise.all([
+    const [documentItems, folderItems, viewItems] = await Promise.all([
       documentsApi.list(),
       documentsApi.listFolders(),
+      viewsApi.list('Documents'),
     ])
     documents.value = documentItems
     folders.value = folderItems
+    views.value = viewItems
+    if (!selectedViewId.value || !viewItems.some((view) => view.id === selectedViewId.value)) {
+      selectedViewId.value = viewItems[0]?.id ?? null
+    }
     if (selectedId.value && !documentItems.some((document) => document.id === selectedId.value)) {
       selectedId.value = null
       revisions.value = []
@@ -205,6 +223,60 @@ async function addFolder() {
   }
 }
 
+async function duplicateView() {
+  if (!selectedViewId.value) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const copy = await viewsApi.duplicate(selectedViewId.value)
+    views.value = await viewsApi.list('Documents')
+    selectedViewId.value = copy.id
+    notice.value = 'Duplicated Saved View. Edit filters on the copy.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to duplicate Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
+function openFilterEditor() {
+  if (!selectedView.value || selectedView.value.isSystem) {
+    return
+  }
+
+  filterName.value = selectedView.value.name
+  filterFolder.value = selectedView.value.filters.folder ?? 'all'
+  filterSlideoutOpen.value = true
+}
+
+async function saveFilters() {
+  if (!selectedView.value || selectedView.value.isSystem) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const updated = await viewsApi.update(selectedView.value.id, {
+      name: filterName.value,
+      filters: filterFolder.value === 'all' ? {} : { folder: filterFolder.value },
+    })
+    views.value = await viewsApi.list('Documents')
+    selectedViewId.value = updated.id
+    filterSlideoutOpen.value = false
+    notice.value = 'Saved View filters updated.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to update Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(() => {
   void loadLibrary()
 })
@@ -225,7 +297,7 @@ onMounted(() => {
     <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
 
     <WorkbenchPanes
-      system-view="All Documents"
+      :system-view="selectedView?.name ?? 'All Documents'"
       nav-title="Folders"
       list-title="Documents"
       detail-title="Source"
@@ -270,6 +342,15 @@ onMounted(() => {
       </template>
 
       <template #list>
+        <SavedViewBar
+          class="mb-4"
+          :views="views"
+          :selected-id="selectedViewId"
+          :pending="saving"
+          @select="selectedViewId = $event"
+          @duplicate="duplicateView"
+          @edit="openFilterEditor"
+        />
         <DataList>
           <DataListEmpty v-if="!loading && visibleDocuments.length === 0">
             No documents in this folder.
@@ -338,6 +419,31 @@ onMounted(() => {
             </template>
           </DataListItem>
         </DataList>
+      </FormSection>
+    </FormSlideout>
+
+    <FormSlideout
+      :open="filterSlideoutOpen"
+      title="Edit Saved View"
+      description="Changes apply to this copy. System Saved Views stay read-only."
+      submit-label="Save"
+      :pending="saving"
+      @update:open="filterSlideoutOpen = $event"
+      @submit="saveFilters"
+    >
+      <FormSection title="Filters">
+        <FormField label="Name" required>
+          <Input v-model="filterName" name="view-name" autocomplete="off" />
+        </FormField>
+        <FormField label="Folder">
+          <select v-model="filterFolder">
+            <option value="all">All</option>
+            <option value="unfiled">Unfiled</option>
+            <option v-for="folder in folderLabels" :key="folder.id" :value="folder.id">
+              {{ folder.path }}
+            </option>
+          </select>
+        </FormField>
       </FormSection>
     </FormSlideout>
   </PageBody>

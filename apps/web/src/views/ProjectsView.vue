@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { activityApi, type ActivityItem } from '@/api/activityApi'
 import { issuesApi, ISSUE_STATUSES, type Issue } from '@/api/issuesApi'
 import { projectsApi, type Project, type ProjectContext } from '@/api/projectsApi'
 import { sessionsApi, type ProjectSession } from '@/api/sessionsApi'
+import { viewsApi, type SavedView } from '@/api/viewsApi'
+import { applyActivityView, applyIssueView, groupsByStatus } from '@/lib/savedViews'
 import {
   Button,
   DataList,
@@ -16,6 +19,7 @@ import {
   MarkdownSource,
   PageBody,
   PageHeader,
+  SavedViewBar,
   StatusMessage,
   WorkbenchPanes,
 } from '@/ui'
@@ -26,9 +30,21 @@ const router = useRouter()
 const projects = ref<Project[]>([])
 const issues = ref<Issue[]>([])
 const sessions = ref<ProjectSession[]>([])
+const activity = ref<ActivityItem[]>([])
+const issueViews = ref<SavedView[]>([])
+const activityViews = ref<SavedView[]>([])
 const context = ref<ProjectContext | null>(null)
 const selectedId = ref<string | null>(null)
 const selectedIssue = ref<Issue | null>(null)
+const selectedIssueViewId = ref<string | null>(null)
+const selectedActivityViewId = ref<string | null>(null)
+const issueFilterOpen = ref(false)
+const activityFilterOpen = ref(false)
+const issueFilterName = ref('')
+const issueFilterStatus = ref('')
+const issueFilterGroup = ref('')
+const activityFilterName = ref('')
+const activityFilterType = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
@@ -51,11 +67,22 @@ const selected = computed(
 
 const recentSessions = computed(() => sessions.value.slice(0, 5))
 
-const issuesByStatus = computed(() =>
-  ISSUE_STATUSES.map((status) => ({
-    status,
-    items: issues.value.filter((issue) => issue.status === status),
-  })),
+const selectedIssueView = computed(
+  () => issueViews.value.find((view) => view.id === selectedIssueViewId.value) ?? null,
+)
+
+const selectedActivityView = computed(
+  () => activityViews.value.find((view) => view.id === selectedActivityViewId.value) ?? null,
+)
+
+const visibleIssues = computed(() => applyIssueView(issues.value, selectedIssueView.value))
+
+const issuesByStatus = computed(() => groupsByStatus(visibleIssues.value, ISSUE_STATUSES))
+
+const groupedIssues = computed(() => selectedIssueView.value?.groupBy === 'status')
+
+const visibleActivity = computed(() =>
+  applyActivityView(activity.value, selectedActivityView.value),
 )
 
 function actorLabel(session: ProjectSession) {
@@ -101,14 +128,39 @@ async function selectProject(project: Project, syncRoute = true) {
   }
 
   try {
-    const [issueItems, contextItem, sessionItems] = await Promise.all([
+    const [
+      issueItems,
+      contextItem,
+      sessionItems,
+      activityItems,
+      issueViewItems,
+      activityViewItems,
+    ] = await Promise.all([
       issuesApi.list(project.id),
       projectsApi.getContext(project.id),
       sessionsApi.list(project.id),
+      activityApi.list(project.id),
+      viewsApi.list('Issues', project.id),
+      viewsApi.list('Activity', project.id),
     ])
     issues.value = issueItems
     context.value = contextItem
     sessions.value = sessionItems
+    activity.value = activityItems
+    issueViews.value = issueViewItems
+    activityViews.value = activityViewItems
+    if (
+      !selectedIssueViewId.value ||
+      !issueViewItems.some((view) => view.id === selectedIssueViewId.value)
+    ) {
+      selectedIssueViewId.value = issueViewItems[0]?.id ?? null
+    }
+    if (
+      !selectedActivityViewId.value ||
+      !activityViewItems.some((view) => view.id === selectedActivityViewId.value)
+    ) {
+      selectedActivityViewId.value = activityViewItems[0]?.id ?? null
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load the Project'
     throw e
@@ -213,6 +265,120 @@ async function createIssue() {
   }
 }
 
+async function duplicateIssueView() {
+  if (!selectedIssueViewId.value) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const copy = await viewsApi.duplicate(selectedIssueViewId.value, undefined, selected.value?.id)
+    issueViews.value = await viewsApi.list('Issues', selected.value?.id)
+    selectedIssueViewId.value = copy.id
+    notice.value = 'Duplicated issue Saved View.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to duplicate Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
+function openIssueFilters() {
+  if (!selectedIssueView.value || selectedIssueView.value.isSystem) {
+    return
+  }
+
+  issueFilterName.value = selectedIssueView.value.name
+  issueFilterStatus.value = selectedIssueView.value.filters.status ?? ''
+  issueFilterGroup.value = selectedIssueView.value.groupBy ?? ''
+  issueFilterOpen.value = true
+}
+
+async function saveIssueFilters() {
+  if (!selectedIssueView.value || selectedIssueView.value.isSystem) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const updated = await viewsApi.update(selectedIssueView.value.id, {
+      name: issueFilterName.value,
+      filters: issueFilterStatus.value ? { status: issueFilterStatus.value } : {},
+      groupBy: issueFilterGroup.value || null,
+    })
+    issueViews.value = await viewsApi.list('Issues', selected.value?.id)
+    selectedIssueViewId.value = updated.id
+    issueFilterOpen.value = false
+    notice.value = 'Issue Saved View updated.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to update Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
+async function duplicateActivityView() {
+  if (!selectedActivityViewId.value) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const copy = await viewsApi.duplicate(
+      selectedActivityViewId.value,
+      undefined,
+      selected.value?.id,
+    )
+    activityViews.value = await viewsApi.list('Activity', selected.value?.id)
+    selectedActivityViewId.value = copy.id
+    notice.value = 'Duplicated Activity Saved View.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to duplicate Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
+function openActivityFilters() {
+  if (!selectedActivityView.value || selectedActivityView.value.isSystem) {
+    return
+  }
+
+  activityFilterName.value = selectedActivityView.value.name
+  activityFilterType.value = selectedActivityView.value.filters.recordType ?? ''
+  activityFilterOpen.value = true
+}
+
+async function saveActivityFilters() {
+  if (!selectedActivityView.value || selectedActivityView.value.isSystem) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const updated = await viewsApi.update(selectedActivityView.value.id, {
+      name: activityFilterName.value,
+      filters: activityFilterType.value ? { recordType: activityFilterType.value } : {},
+    })
+    activityViews.value = await viewsApi.list('Activity', selected.value?.id)
+    selectedActivityViewId.value = updated.id
+    activityFilterOpen.value = false
+    notice.value = 'Activity Saved View updated.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to update Saved View'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
 watch(
   () => route.params.idOrSlug,
   (idOrSlug) => {
@@ -246,7 +412,7 @@ onMounted(() => {
     <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
 
     <WorkbenchPanes
-      system-view="Issues by status"
+      :system-view="selectedIssueView?.name ?? 'Issues by status'"
       nav-title="Projects"
       list-title="Issues"
       detail-title="Context"
@@ -267,6 +433,15 @@ onMounted(() => {
       </template>
 
       <template #list>
+        <SavedViewBar
+          class="mb-4"
+          :views="issueViews"
+          :selected-id="selectedIssueViewId"
+          :pending="saving"
+          @select="selectedIssueViewId = $event"
+          @duplicate="duplicateIssueView"
+          @edit="openIssueFilters"
+        />
         <Button
           v-if="selected"
           class="mb-4"
@@ -278,21 +453,35 @@ onMounted(() => {
           New issue
         </Button>
         <StatusMessage v-if="!selected">Select a Project to see its Issues.</StatusMessage>
-        <template v-for="bucket in issuesByStatus" :key="bucket.status">
-          <h3 class="mt-4 mb-2 text-sm font-semibold">{{ bucket.status }}</h3>
-          <DataList>
-            <DataListEmpty v-if="bucket.items.length === 0">None</DataListEmpty>
-            <DataListItem
-              v-for="issue in bucket.items"
-              :key="issue.id"
-              :title="issue.title"
-              :description="issue.effectivelyBlocked ? 'Effectively blocked' : issue.priority"
-              interactive
-              :selected="selectedIssue?.id === issue.id"
-              @click="openIssue(issue)"
-            />
-          </DataList>
+        <template v-if="groupedIssues">
+          <template v-for="bucket in issuesByStatus" :key="bucket.status">
+            <h3 class="mt-4 mb-2 text-sm font-semibold">{{ bucket.status }}</h3>
+            <DataList>
+              <DataListEmpty v-if="bucket.items.length === 0">None</DataListEmpty>
+              <DataListItem
+                v-for="issue in bucket.items"
+                :key="issue.id"
+                :title="issue.title"
+                :description="issue.effectivelyBlocked ? 'Effectively blocked' : issue.priority"
+                interactive
+                :selected="selectedIssue?.id === issue.id"
+                @click="openIssue(issue)"
+              />
+            </DataList>
+          </template>
         </template>
+        <DataList v-else>
+          <DataListEmpty v-if="!visibleIssues.length">No Issues in this view.</DataListEmpty>
+          <DataListItem
+            v-for="issue in visibleIssues"
+            :key="issue.id"
+            :title="issue.title"
+            :description="issue.status"
+            interactive
+            :selected="selectedIssue?.id === issue.id"
+            @click="openIssue(issue)"
+          />
+        </DataList>
       </template>
 
       <template #detail>
@@ -315,6 +504,27 @@ onMounted(() => {
               :key="session.id"
               :title="session.summary ?? 'Session'"
               :description="`${actorLabel(session)} · ${sessionWhen(session)}`"
+            />
+          </DataList>
+          <h3 class="mt-6 mb-2 font-semibold">Activity</h3>
+          <SavedViewBar
+            class="mb-4"
+            :views="activityViews"
+            :selected-id="selectedActivityViewId"
+            :pending="saving"
+            @select="selectedActivityViewId = $event"
+            @duplicate="duplicateActivityView"
+            @edit="openActivityFilters"
+          />
+          <DataList>
+            <DataListEmpty v-if="visibleActivity.length === 0"
+              >No Activity in this view.</DataListEmpty
+            >
+            <DataListItem
+              v-for="item in visibleActivity"
+              :key="item.id"
+              :title="item.summary"
+              :description="`${item.recordType} · ${item.occurredAt}`"
             />
           </DataList>
         </template>
@@ -399,6 +609,62 @@ onMounted(() => {
           <Input v-model="issueTitle" name="issue-title" autocomplete="off" />
         </FormField>
         <MarkdownSource v-model="issueDescription" label="Description" />
+      </FormSection>
+    </FormSlideout>
+
+    <FormSlideout
+      :open="issueFilterOpen"
+      title="Edit Issue Saved View"
+      description="Changes apply to this copy. The system original stays read-only."
+      submit-label="Save"
+      :pending="saving"
+      @update:open="issueFilterOpen = $event"
+      @submit="saveIssueFilters"
+    >
+      <FormSection title="Filters">
+        <FormField label="Name" required>
+          <Input v-model="issueFilterName" name="issue-view-name" autocomplete="off" />
+        </FormField>
+        <FormField label="Status">
+          <select v-model="issueFilterStatus">
+            <option value="">Any</option>
+            <option v-for="status in ISSUE_STATUSES" :key="status" :value="status">
+              {{ status }}
+            </option>
+          </select>
+        </FormField>
+        <FormField label="Group by">
+          <select v-model="issueFilterGroup">
+            <option value="">None</option>
+            <option value="status">Status</option>
+          </select>
+        </FormField>
+      </FormSection>
+    </FormSlideout>
+
+    <FormSlideout
+      :open="activityFilterOpen"
+      title="Edit Activity Saved View"
+      description="Changes apply to this copy. The system original stays read-only."
+      submit-label="Save"
+      :pending="saving"
+      @update:open="activityFilterOpen = $event"
+      @submit="saveActivityFilters"
+    >
+      <FormSection title="Filters">
+        <FormField label="Name" required>
+          <Input v-model="activityFilterName" name="activity-view-name" autocomplete="off" />
+        </FormField>
+        <FormField label="Record type">
+          <select v-model="activityFilterType">
+            <option value="">Any</option>
+            <option value="Issue">Issue</option>
+            <option value="Document">Document</option>
+            <option value="Session">Session</option>
+            <option value="InboxItem">Inbox Item</option>
+            <option value="Project">Project</option>
+          </select>
+        </FormField>
       </FormSection>
     </FormSlideout>
   </PageBody>

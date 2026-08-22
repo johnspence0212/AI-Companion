@@ -36,6 +36,7 @@ public sealed class CompanionModule : IEnterpriseModule
         services.AddScoped<ActivityService>();
         services.AddScoped<SessionService>();
         services.AddScoped<SearchService>();
+        services.AddScoped<SavedViewService>();
         services.AddScoped<IAfterSignInHandler>(provider => provider.GetRequiredService<ProjectService>());
         services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, AiClientAuthenticationHandler>(AiClientAuth.Scheme, _ => { });
@@ -138,6 +139,7 @@ public sealed class CompanionModule : IEnterpriseModule
         InboxEndpoints.Map(endpoints);
         SessionEndpoints.Map(endpoints);
         SearchEndpoints.Map(endpoints);
+        SavedViewEndpoints.Map(endpoints);
 
         var clients = endpoints.MapGroup("/api/v1/ai-clients")
             .RequireAuthorization(CompanionPermissions.AiClientsManage);

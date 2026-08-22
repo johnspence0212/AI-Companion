@@ -65,4 +65,5 @@ export {
   DataTable,
   WorkbenchPanes,
   MarkdownSource,
+  SavedViewBar,
 } from './chrome'
