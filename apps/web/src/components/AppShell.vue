@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, KeyRound, ShieldCheck, User, Users } from 'lucide-vue-next'
+import {
+  CalendarDays,
+  FolderKanban,
+  Inbox,
+  KeyRound,
+  Library,
+  Search,
+  ShieldCheck,
+  User,
+  Users,
+} from 'lucide-vue-next'
 import { Separator } from '@/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/ui/sidebar'
 import AppSidebar from './AppSidebar.vue'
@@ -9,8 +19,12 @@ import UserMenu from './UserMenu.vue'
 
 const route = useRoute()
 
-const routeInfo: Record<string, { label: string; icon: typeof Home }> = {
-  home: { label: 'Home', icon: Home },
+const routeInfo: Record<string, { label: string; icon: typeof CalendarDays }> = {
+  home: { label: 'Today', icon: CalendarDays },
+  inbox: { label: 'Inbox', icon: Inbox },
+  projects: { label: 'Projects', icon: FolderKanban },
+  library: { label: 'Library', icon: Library },
+  search: { label: 'Search', icon: Search },
   profile: { label: 'Profile', icon: User },
   users: { label: 'Users', icon: Users },
   roles: { label: 'Roles', icon: KeyRound },
@@ -19,7 +33,7 @@ const routeInfo: Record<string, { label: string; icon: typeof Home }> = {
 
 const currentRoute = computed(() => {
   const name = route.name as string
-  return routeInfo[name] ?? { label: 'Page', icon: Home }
+  return routeInfo[name] ?? { label: 'Page', icon: CalendarDays }
 })
 
 const breadcrumbs = computed(() => {

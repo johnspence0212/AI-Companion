@@ -66,7 +66,8 @@ export const documentsApi = {
     const data = await httpClient.get<unknown>('/documents')
     return Array.isArray(data) ? data.map(parseDocument) : []
   },
-  get: async (id: string): Promise<LibraryDocument> => parseDocument(await httpClient.get(`/documents/${id}`)),
+  get: async (id: string): Promise<LibraryDocument> =>
+    parseDocument(await httpClient.get(`/documents/${id}`)),
   create: async (title: string, body: string): Promise<LibraryDocument> =>
     parseDocument(await httpClient.post('/documents', { title, body })),
   save: async (
@@ -75,9 +76,7 @@ export const documentsApi = {
     title: string,
     body: string,
   ): Promise<LibraryDocument> =>
-    parseDocument(
-      await httpClient.put(`/documents/${id}`, { expectedRevisionId, title, body }),
-    ),
+    parseDocument(await httpClient.put(`/documents/${id}`, { expectedRevisionId, title, body })),
   revisions: async (id: string): Promise<DocumentRevision[]> => {
     const data = await httpClient.get<unknown>(`/documents/${id}/revisions`)
     return Array.isArray(data) ? data.map(parseRevision) : []

@@ -58,7 +58,7 @@ test('admin provisions a user and RBAC denies its administration access', async 
     ])
   }
 
-  await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
   await expectAccessible(page)
 
   await page.getByRole('button', { name: 'Administration' }).click()

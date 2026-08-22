@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import {
-  documentsApi,
-  type DocumentRevision,
-  type LibraryDocument,
-} from '@/api/documentsApi'
+import { documentsApi, type DocumentRevision, type LibraryDocument } from '@/api/documentsApi'
 import {
   Button,
   DataList,

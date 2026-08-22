@@ -17,12 +17,7 @@ const tag = computed(() => (props.to ? 'router-link' : 'div'))
   <component
     :is="tag"
     :to="to"
-    :class="
-      cn(
-        'rounded-lg border bg-card p-5',
-        to && 'transition-colors hover:bg-muted/40',
-      )
-    "
+    :class="cn('rounded-lg border bg-card p-5', to && 'transition-colors hover:bg-muted/40')"
   >
     <slot />
   </component>

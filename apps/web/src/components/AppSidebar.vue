@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Home, KeyRound, PanelLeft, Settings, ShieldCheck, Users } from 'lucide-vue-next'
+import { KeyRound, PanelLeft, Settings, ShieldCheck, Users } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,10 +34,9 @@ const route = useRoute()
 const router = useRouter()
 const { isMobile, setOpenMobile, state, toggleSidebar } = useSidebar()
 
-const coreItems = computed(() => [
-  { label: 'Home', to: '/', icon: Home },
-  ...moduleNavigation.filter((item) => !item.permission || auth.hasPermission(item.permission)),
-])
+const coreItems = computed(() =>
+  moduleNavigation.filter((item) => !item.permission || auth.hasPermission(item.permission)),
+)
 
 const adminItems = computed(() =>
   [

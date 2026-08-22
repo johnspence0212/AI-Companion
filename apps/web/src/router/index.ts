@@ -31,13 +31,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/views/HomeView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/prototype/workbench',
-      name: 'prototype-workbench',
-      component: () => import('@/views/prototype/WorkbenchPrototypeView.vue'),
+      component: () => import('@/views/TodayView.vue'),
       meta: { requiresAuth: true },
     },
     {
