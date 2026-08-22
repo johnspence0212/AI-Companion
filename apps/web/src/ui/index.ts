@@ -11,6 +11,7 @@
 // Primitives
 export { Button, buttonVariants, type ButtonVariants } from './button'
 export { Input } from './input'
+export { Textarea } from './textarea'
 export { Label } from './label'
 export { Separator } from './separator'
 export {
