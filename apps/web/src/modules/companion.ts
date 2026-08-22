@@ -28,6 +28,12 @@ export const companionModule: AppModule = {
       component: () => import('@/views/SearchView.vue'),
       meta: { requiresAuth: true, permission: 'search.read' },
     },
+    {
+      path: '/ai-clients',
+      name: 'ai-clients',
+      component: () => import('@/views/AiClientsView.vue'),
+      meta: { requiresAuth: true, permission: 'aiclients.manage' },
+    },
   ],
   navigation: [
     { label: 'Today', to: '/', icon: CalendarDays, permission: 'daily.read' },

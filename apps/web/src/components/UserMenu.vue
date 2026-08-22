@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Download, LogOut, User } from 'lucide-vue-next'
+import { Bot, Download, LogOut, User } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import {
   DropdownMenuContent,
@@ -44,6 +44,10 @@ async function signOut() {
 function goProfile() {
   void router.push('/profile')
 }
+
+function goAiClients() {
+  void router.push('/ai-clients')
+}
 </script>
 
 <template>
@@ -83,6 +87,14 @@ function goProfile() {
         >
           <User class="size-4" />
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="auth.hasPermission('aiclients.manage')"
+          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground"
+          @select="goAiClients"
+        >
+          <Bot class="size-4" />
+          AI Clients
         </DropdownMenuItem>
         <DropdownMenuItem
           v-if="canInstall"

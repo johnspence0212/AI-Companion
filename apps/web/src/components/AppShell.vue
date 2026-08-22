@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
+  Bot,
   CalendarDays,
   FolderKanban,
   Inbox,
@@ -25,6 +26,7 @@ const routeInfo: Record<string, { label: string; icon: typeof CalendarDays }> = 
   projects: { label: 'Projects', icon: FolderKanban },
   library: { label: 'Library', icon: Library },
   search: { label: 'Search', icon: Search },
+  'ai-clients': { label: 'AI Clients', icon: Bot },
   profile: { label: 'Profile', icon: User },
   users: { label: 'Users', icon: Users },
   roles: { label: 'Roles', icon: KeyRound },
