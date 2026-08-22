@@ -98,6 +98,20 @@ docker compose up --build
 - Do not commit `.env`, credentials, or database files.
 - Use Aspire for development; treat Compose as a reference deployment.
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in the AI-Companion Linear project. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the five default Matt Pocock skill labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This repository uses a single-context domain documentation layout. See `docs/agents/domain.md`.
+
 ## Cursor Cloud specific instructions
 
 The startup update script runs `dotnet restore`, `npm ci` (in `apps/web` and `e2e`). Toolchain (.NET 10 SDK, Node 22, PostgreSQL 16) is baked into the VM snapshot; it is not reinstalled on startup.
