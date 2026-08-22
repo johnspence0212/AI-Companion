@@ -18,6 +18,7 @@ public sealed class InboxService(
     EnterpriseDbContext db,
     DocumentService documents,
     IssueService issues,
+    ActivityService activity,
     TimeProvider time)
 {
     public async Task<InboxItemDto> CaptureAsync(
@@ -223,21 +224,7 @@ public sealed class InboxService(
         InboxItem item,
         string summary)
     {
-        var now = time.GetUtcNow();
-        db.Set<Activity>().Add(new Activity
-        {
-            Id = Guid.NewGuid(),
-            OwnerUserId = ownerUserId,
-            OccurredAt = now,
-            ActorUserId = actorUserId,
-            ActorAiClientId = aiClientId,
-            ActionType = actionType,
-            RecordType = "InboxItem",
-            RecordId = item.Id,
-            Summary = summary,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+        activity.Add(ownerUserId, actorUserId, aiClientId, actionType, "InboxItem", item.Id, projectId: null, summary);
     }
 
     private static InboxItemDto ToDto(InboxItem item) =>

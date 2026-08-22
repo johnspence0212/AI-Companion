@@ -30,7 +30,7 @@ public sealed class ConflictException(string message, object? details = null) : 
     public object? Details { get; } = details;
 }
 
-public sealed class ProjectService(EnterpriseDbContext db, TimeProvider time) : IAfterSignInHandler
+public sealed class ProjectService(EnterpriseDbContext db, ActivityService activity, TimeProvider time) : IAfterSignInHandler
 {
     public const string BootstrapName = "Bootstrap";
     public const string BootstrapSlug = "bootstrap";
@@ -358,23 +358,7 @@ public sealed class ProjectService(EnterpriseDbContext db, TimeProvider time) : 
         string summary,
         Guid? sessionId = null)
     {
-        var now = time.GetUtcNow();
-        db.Set<Activity>().Add(new Activity
-        {
-            Id = Guid.NewGuid(),
-            OwnerUserId = actorUserId,
-            OccurredAt = now,
-            ActorUserId = actorUserId,
-            ActorAiClientId = aiClientId,
-            ActionType = actionType,
-            RecordType = recordType,
-            RecordId = recordId,
-            ProjectId = projectId,
-            SessionId = sessionId,
-            Summary = summary,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+        activity.Add(actorUserId, actorUserId, aiClientId, actionType, recordType, recordId, projectId, summary, sessionId);
     }
 
     private static ProjectDto ToDto(Project project) =>

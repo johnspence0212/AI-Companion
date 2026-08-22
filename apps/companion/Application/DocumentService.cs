@@ -29,7 +29,7 @@ public sealed record FolderDto(Guid Id, Guid? ParentFolderId, string Name, int R
 
 public sealed record TemplateDto(Guid Id, string Name, string TitlePattern, string Body, DateTimeOffset? ArchivedAt);
 
-public sealed class DocumentService(EnterpriseDbContext db, TimeProvider time)
+public sealed class DocumentService(EnterpriseDbContext db, ActivityService activity, TimeProvider time)
 {
     public async Task<DocumentDto> CreateAsync(
         string ownerUserId,
@@ -561,22 +561,7 @@ public sealed class DocumentService(EnterpriseDbContext db, TimeProvider time)
         string summary,
         Guid? projectId = null)
     {
-        var now = time.GetUtcNow();
-        db.Set<Activity>().Add(new Activity
-        {
-            Id = Guid.NewGuid(),
-            OwnerUserId = ownerUserId,
-            OccurredAt = now,
-            ActorUserId = actorUserId,
-            ActorAiClientId = aiClientId,
-            ActionType = actionType,
-            RecordType = "Document",
-            RecordId = recordId,
-            ProjectId = projectId,
-            Summary = summary,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+        activity.Add(ownerUserId, actorUserId, aiClientId, actionType, "Document", recordId, projectId, summary);
     }
 
     private static DocumentDto ToDto(Document document) =>

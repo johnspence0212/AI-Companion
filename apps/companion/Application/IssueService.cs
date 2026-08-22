@@ -23,7 +23,7 @@ public sealed record IssueDto(
     bool EffectivelyBlocked,
     DateTimeOffset? ArchivedAt);
 
-public sealed class IssueService(EnterpriseDbContext db, TimeProvider time)
+public sealed class IssueService(EnterpriseDbContext db, ActivityService activity, TimeProvider time)
 {
     public async Task<IssueDto> CreateAsync(
         Guid projectId,
@@ -659,22 +659,7 @@ public sealed class IssueService(EnterpriseDbContext db, TimeProvider time)
         Guid projectId,
         string summary)
     {
-        var now = time.GetUtcNow();
-        db.Set<Activity>().Add(new Activity
-        {
-            Id = Guid.NewGuid(),
-            OwnerUserId = ownerUserId,
-            OccurredAt = now,
-            ActorUserId = actorUserId,
-            ActorAiClientId = aiClientId,
-            ActionType = actionType,
-            RecordType = "Issue",
-            RecordId = recordId,
-            ProjectId = projectId,
-            Summary = summary,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+        activity.Add(ownerUserId, actorUserId, aiClientId, actionType, "Issue", recordId, projectId, summary);
     }
 
     private static IssueDto ToDto(Issue issue, bool effectivelyBlocked) =>

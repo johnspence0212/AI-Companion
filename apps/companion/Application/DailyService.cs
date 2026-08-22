@@ -27,7 +27,7 @@ public sealed record DailyDto(
     IReadOnlyList<DailyItemDto> Carryover,
     IReadOnlyList<DailyBlockedDto> Blocked);
 
-public sealed class DailyService(EnterpriseDbContext db, TimeProvider time)
+public sealed class DailyService(EnterpriseDbContext db, ActivityService activity, TimeProvider time)
 {
     public const int CarryoverDays = 7;
 
@@ -218,22 +218,15 @@ public sealed class DailyService(EnterpriseDbContext db, TimeProvider time)
         DailyItem item,
         string summary)
     {
-        var now = time.GetUtcNow();
-        db.Set<Activity>().Add(new Activity
-        {
-            Id = Guid.NewGuid(),
-            OwnerUserId = ownerUserId,
-            OccurredAt = now,
-            ActorUserId = actorUserId,
-            ActorAiClientId = aiClientId,
-            ActionType = actionType,
-            RecordType = "DailyItem",
-            RecordId = item.Id,
-            ProjectId = item.Issue?.ProjectId,
-            Summary = summary,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+        activity.Add(
+            ownerUserId,
+            actorUserId,
+            aiClientId,
+            actionType,
+            "DailyItem",
+            item.Id,
+            item.Issue?.ProjectId,
+            summary);
     }
 
     private static DailyItemDto ToDto(DailyItem item) =>
