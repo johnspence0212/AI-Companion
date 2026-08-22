@@ -350,6 +350,7 @@ public sealed class MustChangePasswordMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, UserManager<ApplicationUser> userManager)
     {
         if (context.User.Identity?.IsAuthenticated == true
+            && !context.Request.Path.StartsWithSegments("/mcp")
             && !AllowedPaths.Contains(context.Request.Path))
         {
             var user = await userManager.GetUserAsync(context.User);
@@ -374,9 +375,11 @@ public sealed class AntiforgeryValidationMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, IAntiforgery antiforgery)
     {
         var loginPath = context.Request.Path.Equals("/api/v1/auth/login");
+        var mcpPath = context.Request.Path.StartsWithSegments("/mcp");
         if (context.User.Identity?.IsAuthenticated == true
             && !SafeMethods.Contains(context.Request.Method)
-            && !loginPath)
+            && !loginPath
+            && !mcpPath)
         {
             try
             {
