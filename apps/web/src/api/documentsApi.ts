@@ -22,6 +22,13 @@ export interface DocumentRevision {
   createdAt: string
 }
 
+export interface LibraryFolder {
+  id: string
+  parentFolderId: string | null
+  name: string
+  rank: number
+}
+
 function parseDocument(data: unknown): LibraryDocument {
   if (
     !isRecord(data) ||
@@ -47,6 +54,19 @@ function parseDocument(data: unknown): LibraryDocument {
   }
 }
 
+function parseFolder(data: unknown): LibraryFolder {
+  if (!isRecord(data) || typeof data.id !== 'string' || typeof data.name !== 'string') {
+    throw new ApiError('Unexpected folder response from the server')
+  }
+
+  return {
+    id: data.id,
+    parentFolderId: typeof data.parentFolderId === 'string' ? data.parentFolderId : null,
+    name: data.name,
+    rank: typeof data.rank === 'number' ? data.rank : 0,
+  }
+}
+
 function parseRevision(data: unknown): DocumentRevision {
   if (!isRecord(data) || typeof data.id !== 'string' || typeof data.body !== 'string') {
     throw new ApiError('Unexpected revision response from the server')
@@ -68,8 +88,14 @@ export const documentsApi = {
   },
   get: async (id: string): Promise<LibraryDocument> =>
     parseDocument(await httpClient.get(`/documents/${id}`)),
-  create: async (title: string, body: string): Promise<LibraryDocument> =>
-    parseDocument(await httpClient.post('/documents', { title, body })),
+  create: async (title: string, body: string, folderId?: string | null): Promise<LibraryDocument> =>
+    parseDocument(await httpClient.post('/documents', { title, body, folderId })),
+  listFolders: async (): Promise<LibraryFolder[]> => {
+    const data = await httpClient.get<unknown>('/folders')
+    return Array.isArray(data) ? data.map(parseFolder) : []
+  },
+  createFolder: async (name: string, parentFolderId?: string | null): Promise<LibraryFolder> =>
+    parseFolder(await httpClient.post('/folders', { name, parentFolderId })),
   save: async (
     id: string,
     expectedRevisionId: string,

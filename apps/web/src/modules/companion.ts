@@ -11,7 +11,7 @@ export const companionModule: AppModule = {
       meta: { requiresAuth: true, permission: 'inbox.read' },
     },
     {
-      path: '/projects',
+      path: '/projects/:idOrSlug?',
       name: 'projects',
       component: () => import('@/views/ProjectsView.vue'),
       meta: { requiresAuth: true, permission: 'projects.read' },

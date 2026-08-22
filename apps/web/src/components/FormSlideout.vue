@@ -17,13 +17,19 @@ const props = withDefaults(
     title: string
     description?: string
     submitLabel?: string
+    cancelLabel?: string
     pending?: boolean
     allowFullscreen?: boolean
+    showSubmit?: boolean
+    size?: 'md' | 'wide'
   }>(),
   {
     submitLabel: 'Save',
+    cancelLabel: 'Cancel',
     pending: false,
     allowFullscreen: false,
+    showSubmit: true,
+    size: 'md',
   },
 )
 
@@ -35,6 +41,16 @@ const emit = defineEmits<{
 const isFullscreen = ref(false)
 
 const headerPaddingClass = computed(() => (props.allowFullscreen ? 'pr-20' : 'pr-10'))
+
+const sheetWidthClass = computed(() => {
+  if (isFullscreen.value) {
+    return 'flex w-screen max-w-none flex-col gap-0 p-0 sm:max-w-none'
+  }
+
+  return props.size === 'wide'
+    ? 'flex w-full max-w-3xl flex-col gap-0 p-0 sm:max-w-3xl'
+    : 'flex w-full max-w-md flex-col gap-0 p-0 sm:max-w-md'
+})
 
 watch(
   () => props.open,
@@ -58,14 +74,7 @@ function onSubmit() {
 
 <template>
   <Sheet :open="open" @update:open="setOpen">
-    <SheetContent
-      side="right"
-      :class="
-        isFullscreen
-          ? 'flex w-screen max-w-none flex-col gap-0 p-0 sm:max-w-none'
-          : 'flex w-full max-w-md flex-col gap-0 p-0 sm:max-w-md'
-      "
-    >
+    <SheetContent side="right" :class="sheetWidthClass">
       <template #header-actions>
         <Button
           v-if="allowFullscreen"
@@ -97,9 +106,9 @@ function onSubmit() {
 
         <SheetFooter class="border-t px-6 py-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" :disabled="pending" @click="setOpen(false)">
-            Cancel
+            {{ cancelLabel }}
           </Button>
-          <Button type="submit" :disabled="pending">
+          <Button v-if="showSubmit" type="submit" :disabled="pending">
             {{ submitLabel }}
           </Button>
         </SheetFooter>

@@ -1,12 +1,24 @@
 <script setup lang="ts">
-defineProps<{
+import { cn } from '@/lib/utils'
+
+const props = defineProps<{
   title?: string
   description?: string
+  selected?: boolean
+  interactive?: boolean
 }>()
 </script>
 
 <template>
-  <li class="flex flex-wrap items-center justify-between gap-3 p-4">
+  <li
+    :class="
+      cn(
+        'flex flex-wrap items-center justify-between gap-3 p-4',
+        props.interactive && 'cursor-pointer',
+        props.selected && 'bg-muted/50',
+      )
+    "
+  >
     <div class="min-w-0">
       <p v-if="title || $slots.title" class="font-medium">
         <slot name="title">{{ title }}</slot>

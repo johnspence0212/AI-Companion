@@ -6,7 +6,7 @@ Vue implementations for page shells, lists, and forms live here.
 
 | Need                        | Do this                                                                                                     |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Use chrome in a view/module | `import { PageBody, DataList } from '@/ui'`                                                                 |
+| Use chrome in a view/module | `import { PageBody, DataList, WorkbenchPanes, MarkdownSource } from '@/ui'`                                 |
 | Change a look               | Edit the component here and/or tokens in `src/styles/theme.css`                                             |
 | Add a new pattern           | Add a component here, export it from `src/ui/chrome.ts` + `src/ui/index.ts`, document in `src/ui/README.md` |
 

@@ -1,60 +1,136 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { documentsApi, type DocumentRevision, type LibraryDocument } from '@/api/documentsApi'
+import { computed, onMounted, ref } from 'vue'
+import {
+  documentsApi,
+  type DocumentRevision,
+  type LibraryDocument,
+  type LibraryFolder,
+} from '@/api/documentsApi'
 import {
   Button,
   DataList,
   DataListEmpty,
   DataListItem,
   FormField,
+  FormSection,
+  FormSlideout,
   Input,
+  MarkdownSource,
   PageBody,
   PageHeader,
   StatusMessage,
-  SurfaceCard,
-  Textarea,
+  WorkbenchPanes,
 } from '@/ui'
 
 const documents = ref<LibraryDocument[]>([])
+const folders = ref<LibraryFolder[]>([])
 const revisions = ref<DocumentRevision[]>([])
+const selectedFolderId = ref<string | 'all' | 'unfiled'>('all')
 const selectedId = ref<string | null>(null)
+const slideoutOpen = ref(false)
+const editingId = ref<string | null>(null)
 const title = ref('')
 const body = ref('')
 const revisionId = ref('')
+const folderDraft = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 
-async function loadList() {
+const selected = computed(
+  () => documents.value.find((document) => document.id === selectedId.value) ?? null,
+)
+
+const visibleDocuments = computed(() => {
+  if (selectedFolderId.value === 'all') {
+    return documents.value
+  }
+
+  if (selectedFolderId.value === 'unfiled') {
+    return documents.value.filter((document) => document.folderId === null)
+  }
+
+  return documents.value.filter((document) => document.folderId === selectedFolderId.value)
+})
+
+const folderLabels = computed(() => {
+  const byId = new Map(folders.value.map((folder) => [folder.id, folder]))
+  return folders.value
+    .slice()
+    .sort((left, right) => left.rank - right.rank || left.name.localeCompare(right.name))
+    .map((folder) => {
+      const parts = [folder.name]
+      let parentId = folder.parentFolderId
+      while (parentId) {
+        const parent = byId.get(parentId)
+        if (!parent) {
+          break
+        }
+        parts.unshift(parent.name)
+        parentId = parent.parentFolderId
+      }
+
+      return { ...folder, path: parts.join(' / ') }
+    })
+})
+
+function folderName(id: string | null) {
+  if (!id) {
+    return 'Unfiled'
+  }
+
+  return folderLabels.value.find((folder) => folder.id === id)?.path ?? 'Folder'
+}
+
+async function loadLibrary() {
   loading.value = true
   error.value = null
   try {
-    documents.value = await documentsApi.list()
+    const [documentItems, folderItems] = await Promise.all([
+      documentsApi.list(),
+      documentsApi.listFolders(),
+    ])
+    documents.value = documentItems
+    folders.value = folderItems
+    if (selectedId.value && !documentItems.some((document) => document.id === selectedId.value)) {
+      selectedId.value = null
+      revisions.value = []
+    }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load documents'
+    error.value = e instanceof Error ? e.message : 'Failed to load the library'
     throw e
   } finally {
     loading.value = false
   }
 }
 
-async function open(document: LibraryDocument) {
+async function selectDocument(document: LibraryDocument) {
   selectedId.value = document.id
-  title.value = document.title
-  body.value = document.body
-  revisionId.value = document.revisionId
   notice.value = null
   revisions.value = await documentsApi.revisions(document.id)
 }
 
-function startCreate() {
-  selectedId.value = null
+function openCreate() {
+  editingId.value = null
   title.value = ''
   body.value = ''
   revisionId.value = ''
   revisions.value = []
-  notice.value = null
+  slideoutOpen.value = true
+}
+
+function openEdit(document: LibraryDocument) {
+  editingId.value = document.id
+  title.value = document.title
+  body.value = document.body
+  revisionId.value = document.revisionId
+  slideoutOpen.value = true
+  void selectDocument(document)
+}
+
+function setSlideoutOpen(open: boolean) {
+  slideoutOpen.value = open
 }
 
 async function save() {
@@ -67,11 +143,16 @@ async function save() {
   error.value = null
   notice.value = null
   try {
-    const saved = selectedId.value
-      ? await documentsApi.save(selectedId.value, revisionId.value, title.value, body.value)
-      : await documentsApi.create(title.value, body.value)
-    await loadList()
-    await open(saved)
+    const folderId =
+      selectedFolderId.value === 'all' || selectedFolderId.value === 'unfiled'
+        ? null
+        : selectedFolderId.value
+    const saved = editingId.value
+      ? await documentsApi.save(editingId.value, revisionId.value, title.value, body.value)
+      : await documentsApi.create(title.value, body.value, folderId)
+    await loadLibrary()
+    await selectDocument(saved)
+    slideoutOpen.value = false
     notice.value = 'Saved.'
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to save document'
@@ -82,13 +163,19 @@ async function save() {
 }
 
 async function restore(revision: DocumentRevision) {
-  if (!selectedId.value) return
+  if (!editingId.value) {
+    return
+  }
+
   saving.value = true
   error.value = null
   try {
-    const restored = await documentsApi.restore(selectedId.value, revisionId.value, revision.id)
-    await loadList()
-    await open(restored)
+    const restored = await documentsApi.restore(editingId.value, revisionId.value, revision.id)
+    await loadLibrary()
+    await selectDocument(restored)
+    title.value = restored.title
+    body.value = restored.body
+    revisionId.value = restored.revisionId
     notice.value = 'Restored a new current revision.'
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to restore revision'
@@ -98,8 +185,28 @@ async function restore(revision: DocumentRevision) {
   }
 }
 
+async function addFolder() {
+  if (!folderDraft.value.trim()) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const created = await documentsApi.createFolder(folderDraft.value.trim())
+    folderDraft.value = ''
+    await loadLibrary()
+    selectedFolderId.value = created.id
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to create folder'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(() => {
-  void loadList()
+  void loadLibrary()
 })
 </script>
 
@@ -110,56 +217,128 @@ onMounted(() => {
       description="Independent Documents. Source Markdown is the editor; fenced code is stored exactly."
     >
       <template #actions>
-        <Button @click="startCreate">New document</Button>
+        <Button shape="square" @click="openCreate">New document</Button>
       </template>
     </PageHeader>
 
     <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <SurfaceCard>
-        <DataList>
-          <DataListEmpty v-if="!loading && documents.length === 0">No documents yet.</DataListEmpty>
+    <WorkbenchPanes
+      system-view="All Documents"
+      nav-title="Folders"
+      list-title="Documents"
+      detail-title="Source"
+    >
+      <template #nav>
+        <form @submit.prevent="addFolder">
+          <FormField label="New folder">
+            <Input v-model="folderDraft" name="folder" autocomplete="off" />
+          </FormField>
+          <Button
+            class="mt-3"
+            type="submit"
+            size="sm"
+            shape="square"
+            :disabled="saving || !folderDraft.trim()"
+          >
+            Add folder
+          </Button>
+        </form>
+        <DataList class="mt-4">
           <DataListItem
-            v-for="document in documents"
-            :key="document.id"
-            :title="document.title"
-            class="cursor-pointer"
-            @click="open(document)"
+            title="All"
+            interactive
+            :selected="selectedFolderId === 'all'"
+            @click="selectedFolderId = 'all'"
+          />
+          <DataListItem
+            title="Unfiled"
+            interactive
+            :selected="selectedFolderId === 'unfiled'"
+            @click="selectedFolderId = 'unfiled'"
+          />
+          <DataListItem
+            v-for="folder in folderLabels"
+            :key="folder.id"
+            :title="folder.path"
+            interactive
+            :selected="selectedFolderId === folder.id"
+            @click="selectedFolderId = folder.id"
           />
         </DataList>
-      </SurfaceCard>
+      </template>
 
-      <SurfaceCard>
-        <form class="space-y-4" @submit.prevent="save">
-          <FormField label="Title">
-            <Input v-model="title" name="title" autocomplete="off" />
-          </FormField>
-          <FormField label="Markdown">
-            <Textarea v-model="body" name="body" rows="16" spellcheck="false" />
-          </FormField>
-          <Button type="submit" :disabled="saving">{{ selectedId ? 'Save' : 'Create' }}</Button>
-        </form>
+      <template #list>
+        <DataList>
+          <DataListEmpty v-if="!loading && visibleDocuments.length === 0">
+            No documents in this folder.
+          </DataListEmpty>
+          <DataListItem
+            v-for="document in visibleDocuments"
+            :key="document.id"
+            :title="document.title"
+            :description="folderName(document.folderId)"
+            interactive
+            :selected="selectedId === document.id"
+            @click="selectDocument(document)"
+          >
+            <template #actions>
+              <Button size="sm" variant="outline" shape="square" @click.stop="openEdit(document)">
+                Edit
+              </Button>
+            </template>
+          </DataListItem>
+        </DataList>
+      </template>
 
-        <div v-if="revisions.length" class="mt-6 space-y-2">
-          <h2 class="font-semibold">Revisions</h2>
-          <DataList>
-            <DataListItem
-              v-for="revision in revisions"
-              :key="revision.id"
-              :title="revision.kind"
-              :description="revision.createdAt"
-            >
-              <template v-if="revision.id !== revisionId" #actions>
-                <Button variant="outline" size="sm" :disabled="saving" @click="restore(revision)">
-                  Restore
-                </Button>
-              </template>
-            </DataListItem>
-          </DataList>
-        </div>
-      </SurfaceCard>
-    </div>
+      <template #detail>
+        <StatusMessage v-if="!selected"
+          >Select a Document to read its source Markdown.</StatusMessage
+        >
+        <MarkdownSource v-else :model-value="selected.body" :label="selected.title" readonly />
+      </template>
+    </WorkbenchPanes>
+
+    <FormSlideout
+      :open="slideoutOpen"
+      :title="editingId ? 'Edit Document' : 'New Document'"
+      description="Source Markdown is stored exactly. Preview, highlight, and copy do not change it."
+      :submit-label="editingId ? 'Save' : 'Create'"
+      :pending="saving"
+      allow-fullscreen
+      size="wide"
+      @update:open="setSlideoutOpen"
+      @submit="save"
+    >
+      <FormSection title="Document">
+        <FormField label="Title" required>
+          <Input v-model="title" name="title" autocomplete="off" />
+        </FormField>
+        <MarkdownSource v-model="body" />
+      </FormSection>
+      <FormSection v-if="editingId && revisions.length" title="Revisions">
+        <DataList>
+          <DataListItem
+            v-for="revision in revisions"
+            :key="revision.id"
+            :title="revision.kind"
+            :description="revision.createdAt"
+          >
+            <template v-if="revision.id !== revisionId" #actions>
+              <Button
+                variant="outline"
+                size="sm"
+                shape="square"
+                :disabled="saving"
+                @click="restore(revision)"
+              >
+                Restore
+              </Button>
+            </template>
+          </DataListItem>
+        </DataList>
+      </FormSection>
+    </FormSlideout>
   </PageBody>
 </template>

@@ -63,4 +63,6 @@ export {
   DataListItem,
   DataListEmpty,
   DataTable,
+  WorkbenchPanes,
+  MarkdownSource,
 } from './chrome'

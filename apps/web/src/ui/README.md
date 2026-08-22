@@ -79,6 +79,8 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 | `MultiSelect`                                         | Multi-value selector for forms                 |
 | `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                              |
 | `DataTable`                                           | Dense bordered tables                          |
+| `WorkbenchPanes`                                      | Three-pane workbench (stacks on small screens) |
+| `MarkdownSource`                                      | Source Markdown editor with preview/copy       |
 | `SurfaceCard`                                         | Simple linked/static surface cards             |
 | `GuestShell` / `AppShell` / `AppSidebar` / `UserMenu` | Layout shells                                  |
 
@@ -98,6 +100,10 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 ### Dense audit / table
 
 `PageBody` → `PageHeader` → `DataTable`.
+
+### Workbench destination
+
+`PageBody` → `PageHeader` → `WorkbenchPanes` (nav / list / detail). Open Document, Project Context, or Issue detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 
