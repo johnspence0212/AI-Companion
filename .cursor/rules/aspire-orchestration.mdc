@@ -1,0 +1,41 @@
+---
+description: .NET Aspire AppHost, ServiceDefaults, Postgres + Vite wiring
+globs: aspire/**
+alwaysApply: false
+---
+
+# Aspire Orchestration
+
+## AppHost (`aspire/AppHost/Program.cs`)
+
+Starts PostgreSQL (data volume) + API + Vite. Injects `ConnectionStrings:enterprisestarterdb` and sets web to `VITE_API_BASE_URL=/api`; the web client normalizes it to `/api/v1` and uses the proxy for same-origin cookie/CSRF requests.
+
+## ServiceDefaults
+
+`aspire/ServiceDefaults/Extensions.cs` — OpenTelemetry (OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set), health checks, service discovery, HTTP resilience.
+
+API calls `builder.AddServiceDefaults()` and `app.MapDefaultEndpoints()`.
+
+## Run
+
+```bash
+dotnet run --project aspire/AppHost
+```
+
+Use the **proxied web** URL from the dashboard for login.
+
+## Docker vs Aspire
+
+| | Aspire AppHost | Docker Compose |
+|--|----------------|----------------|
+| Purpose | Local dev | Optional deployment |
+| Database | Aspire Postgres | Compose `postgres` |
+| Migrations | API startup (dev) | One-shot `migrator` |
+| Web | Vite (HMR) | nginx + static `dist` |
+| Run | `dotnet run --project aspire/AppHost` | `docker compose up --build` |
+
+Do not deploy AppHost. Do not replace Aspire with Docker for day-to-day development. Skill: `run-docker-deploy`.
+
+## Adding resources
+
+Use skill `add-aspire-resource` for caches or additional projects.

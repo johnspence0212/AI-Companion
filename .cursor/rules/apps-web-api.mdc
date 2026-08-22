@@ -1,0 +1,43 @@
+---
+description: Typed fetch API clients — httpClient, parsers, BaseApiService
+globs: apps/web/src/api/**
+alwaysApply: false
+---
+
+# API Layer (`apps/web/src/api`)
+
+## Client
+
+`base/client.ts` uses `fetch` with `credentials: 'include'`. It obtains an antiforgery token and adds `X-CSRF-TOKEN` to state-changing requests.
+
+```typescript
+// ✅ GOOD
+const user = parseUser(await httpClient.get<unknown>('/auth/me'))
+```
+
+## BaseApiService
+
+```typescript
+class ExampleApi extends BaseApiService<Example> {
+  constructor() {
+    super('example')
+  }
+}
+export const exampleApi = new ExampleApi()
+```
+
+## Types / light validation
+
+Define interfaces in `types/schema.ts`. Use small `parse*` helpers when runtime checks matter.
+
+## Core APIs
+
+| Client | Role |
+|--------|------|
+| `authApi.ts` | login/me/logout/profile/password |
+| `usersApi.ts` | global user administration |
+| `rolesApi.ts` | global roles and permission catalog |
+| `securityAuditApi.ts` | security audit |
+| `modules/*` | Explicitly registered product modules |
+
+Paths are relative to `BASE_URL`, which normalizes to `/api/v1`. Always use the shared client so cookie and CSRF behavior remains consistent.

@@ -1,0 +1,22 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="UI/Introduction" />
+
+# Template library (`@/ui`)
+
+This Storybook is an optional **catalogue** for the public UI surface. It is not part of the running SPA.
+
+- Features still import only from `@/ui`.
+- Default `npm run dev` / Aspire does not start Storybook.
+- Re-skin by editing `--brand*` in `src/styles/theme.css`.
+
+## Layers
+
+1. Tokens — `src/styles/theme.css`
+2. Primitives — `src/ui/{name}/`
+3. App chrome — `src/components/` re-exported from `@/ui`
+4. Features — compose `@/ui` only
+
+## Recipes
+
+Use the **UI / Recipes** stories when a screen should look like a list page, guest form, or dense table. If it does not fit, extend the library instead of inventing a one-off layout in a view.

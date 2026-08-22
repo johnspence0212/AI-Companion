@@ -1,0 +1,52 @@
+---
+description: EnterpriseDbContext, PostgreSQL, shared migrations, and seeding
+globs: apps/platform/{Data.cs,Domain.cs,Migrations/**}
+alwaysApply: false
+---
+
+# EF Core (`apps/platform`)
+
+## DbContext
+
+`EnterpriseDbContext` owns Identity and security audit data. Compile-time modules may contribute model configuration through `IEntityModelContributor`.
+
+## Entity configuration
+
+```csharp
+// ✅ GOOD — inherit BaseEntityConfiguration<T>
+public sealed class ExampleModelContributor : IEntityModelContributor
+{
+    public void Configure(ModelBuilder modelBuilder)
+    {
+        var builder = modelBuilder.Entity<Example>();
+        builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
+        builder.ToTable("Examples");
+    }
+}
+```
+
+## Migrations
+
+- Folder: `apps/platform/Migrations/`
+- Create with `--project apps/platform --startup-project apps/api`
+- Dev/Aspire: `InitializeEnterpriseDatabaseAsync` runs `MigrateAsync()` when configured
+- Compose: one-shot `migrator` service
+- **Never** `EnsureCreated()`
+
+## Seeding
+
+The initializer synchronizes protected role permissions and optionally creates the bootstrap admin with a required password change.
+
+## Provider
+
+PostgreSQL-only. Connection comes from `ConnectionStrings:enterprisestarterdb` (Aspire) or `Database:ConnectionString`.
+
+```csharp
+// ❌ BAD
+Database.EnsureCreated();
+options.UseSqlite(...);
+
+// ✅ GOOD
+await context.Database.MigrateAsync();
+options.UseNpgsql(connectionString);
+```

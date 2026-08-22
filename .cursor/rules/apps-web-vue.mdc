@@ -1,0 +1,93 @@
+---
+description: Vue 3 Composition API and locked template library (@/ui) conventions for apps/web
+globs: apps/web/**/*.{vue,ts}
+alwaysApply: false
+---
+
+# Vue Frontend (`apps/web`)
+
+## Template library (mandatory)
+
+There is **one** public UI surface: `@/ui` (primitives + app chrome).
+
+```vue
+<!-- ✅ GOOD -->
+<script setup lang="ts">
+import { Button, PageBody, PageHeader, DataList } from '@/ui'
+</script>
+
+<!-- ❌ BAD — deep imports / rogue chrome -->
+import { Button } from '@/ui/button'
+import PageBody from '@/components/PageBody.vue'
+```
+
+- Primitives live under `src/ui/{name}/`
+- Chrome implementations live under `src/components/` but are **only** consumed via `@/ui`
+- Library internals may deep-import (`@/ui/button`) to avoid circular barrels
+- Add UI only through the `add-shadcn-component` skill (primitive or chrome path)
+- Canon: `apps/web/src/ui/README.md`
+
+## Components
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { User } from '@/api/types/schema'
+
+interface Props {
+  user: User
+}
+const props = defineProps<Props>()
+</script>
+```
+
+- Use `<script setup lang="ts">` for all new components
+- Views: `*View.vue` in `src/views/`
+- Absolute imports via `@/`
+
+## Styling (compose only — do not invent looks in features)
+
+Visual style lives in three places only:
+
+1. `src/styles/theme.css` — Brand block (`--brand*`) + semantic tokens
+2. `@/ui` primitives — component variants / focus / sizes
+3. `@/ui` chrome (implemented in `src/components/`) — page body, lists, form panels, shell
+
+```vue
+<!-- ❌ BAD — view invents card / color look -->
+<div class="rounded-lg border bg-card p-6 text-[#1b4332]">…</div>
+<Button class="bg-green-700">Save</Button>
+
+<!-- ✅ GOOD — compose chrome + tokens -->
+<PageBody>
+  <PageHeader title="Users" />
+  <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
+  <DataList>…</DataList>
+</PageBody>
+```
+
+- Re-skin the product by editing `--brand*` in `theme.css` only
+- Need a new look? Add/extend `@/ui` — never style in the view
+- No hex/rgb, no arbitrary colors, no inline `style`, no restyling primitives from features
+- ESLint enforces import + style fences on `src/views/**`, `src/modules/**`, `App.vue`
+
+## Imports
+
+```typescript
+// ✅ GOOD — external first, then @/
+import { computed } from 'vue'
+import { Button, PageBody } from '@/ui'
+import { authApi } from '@/api/authApi'
+```
+
+## API calls in views
+
+Use API modules / stores — do not call `fetch` directly in views.
+
+```typescript
+// ❌ BAD
+const res = await fetch('/api/v1/auth/me')
+
+// ✅ GOOD
+const user = await authApi.me()
+```

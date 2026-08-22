@@ -1,0 +1,35 @@
+---
+description: Vitest, xUnit integration tests, Playwright e2e conventions
+globs: "**/*.{spec.ts,cs},e2e/**,apps/api.tests/**"
+alwaysApply: false
+---
+
+# Testing
+
+## Web unit tests (Vitest)
+
+- Location: `apps/web/src/**/__tests__/*.spec.ts` or colocated `*.spec.ts`
+- Run: `cd apps/web && npm run test:unit -- --run`
+- Mock `@/api/*` and Pinia stores; use `@vue/test-utils`
+
+## API integration tests
+
+- Project: `apps/api.tests/` (PostgreSQL `enterprise_starter_tests` by default)
+- `CustomWebApplicationFactory` — Postgres connection
+- Suites cover cookie/CSRF auth, forced password changes, global RBAC, user lifecycle, audit, compile-time module extension, empty production registry, and deploy hardening
+
+```bash
+dotnet test apps/api.tests/Api.Tests.csproj
+```
+
+## E2E (Playwright)
+
+- Package: `e2e/`
+- `playwright.config.ts` starts api + web against PostgreSQL
+- Prefer same-origin cookie/CSRF auth (`VITE_API_BASE_URL=/api/v1`)
+- Tests: `e2e/tests/*.spec.ts`
+- Run: `cd e2e && npm test`
+
+## CI alignment
+
+Match `.github/workflows/ci.yml`: NuGet vuln gate → api tests → web (prod npm audit + type-check/lint/unit/build) → e2e.

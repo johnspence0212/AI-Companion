@@ -1,0 +1,41 @@
+---
+description: .NET host, platform, and compile-time module conventions
+globs: apps/{api,platform,module-abstractions}/**/*.cs
+alwaysApply: false
+---
+
+# .NET backend
+
+EnterpriseStarter is a PostgreSQL modular monolith with a thin executable host and compile-time modules.
+
+## Entry point
+
+`apps/api/Program.cs` is thin: ServiceDefaults → `AddEnterprisePlatform` → optional migrate/seed → pipeline.
+Compose migrator sets `Database:ExitAfterMigrate=true` and returns without listening.
+
+## Structure
+
+| Folder | Purpose |
+|--------|---------|
+| `apps/api` | Composition root, configuration, Docker image |
+| `apps/platform` | Identity, global RBAC, controllers, data, audit, migrations |
+| `apps/module-abstractions` | `IEnterpriseModule` and production registry |
+
+## JSON
+
+Camel case via `AddJsonOptions`.
+
+## Dev docs
+
+`UseEnterprisePlatform` maps OpenAPI + Scalar in Development only.
+
+## Health
+
+- `/health` — Aspire defaults (dev)
+- `/health/ready` — DB check (Compose API healthcheck)
+
+## Reverse proxy / Docker
+
+When TLS terminates at nginx, set `DisableHttpsRedirection=true`. API still uses forwarded headers + HSTS. Cookie secure policy via `Auth:CookieSecurePolicy`.
+
+Product APIs use explicit `/api/v1` routes. Register modules in `ModuleRegistry.Production`; do not scan assemblies or load runtime plugins. Keep browser auth on the application cookie and CSRF protocol.

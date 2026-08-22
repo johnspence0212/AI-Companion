@@ -1,0 +1,47 @@
+---
+description: Versioned API controllers and permission authorization
+globs: apps/platform/Controllers.cs,apps/**/*.cs
+alwaysApply: false
+---
+
+# API Controllers
+
+## Controller pattern
+
+```csharp
+[ApiController]
+[Authorize]
+[Route("api/v1/examples")]
+public sealed class ExamplesController : ControllerBase;
+```
+
+Use permission policies on each operation or controller as appropriate.
+
+```csharp
+[Authorize(Policy = AppPermissions.UsersManage)]
+public class UsersController(...) { }
+
+[Authorize(Policy = ProductPermissions.RecordsRead)]
+public sealed class RecordsController(...) { }
+```
+
+## Routes
+
+All application routes are explicit and start with `api/v1`. Health and development OpenAPI endpoints are operational exceptions.
+
+## Platform controllers
+
+- `AuthController` — CSRF, login, logout, current user, profile, password
+- `UsersController` — admin-created users and temporary passwords
+- `RolesController` — global role and permission management
+- `AuditController` — security audit read API
+
+```csharp
+// ❌ BAD — new controller without [Authorize]
+[ApiController]
+public class ExampleController : ControllerBase { ... }
+
+// ✅ GOOD — explicit policy
+[Authorize(Policy = ProductPermissions.ExamplesRead)]
+public sealed class ExampleController : ControllerBase;
+```

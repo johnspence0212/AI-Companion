@@ -1,0 +1,15 @@
+{
+  "folders": [
+    { "path": ".", "name": "root" },
+    { "path": "apps/web", "name": "web" },
+    { "path": "apps/api", "name": "api" },
+    { "path": "aspire/AppHost", "name": "AppHost" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true
+    }
+  }
+}

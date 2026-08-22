@@ -1,0 +1,41 @@
+---
+description: CI workflow — dotnet restore/build/test, npm type-check/lint/unit/build, Playwright
+globs: .github/**
+alwaysApply: false
+---
+
+# GitHub Actions
+
+## Workflow (`.github/workflows/ci.yml`)
+
+| Job | Steps |
+|-----|-------|
+| `api` | Postgres service + `dotnet restore/build/test` |
+| `web` | `npm ci`, `type-check`, `lint`, `test:unit --run`, `build`, `build-storybook` in `apps/web` |
+| `e2e` | needs api+web; Postgres service + Playwright in `e2e/` with `CI=true` |
+
+## Versions
+
+- .NET: `10.0.x`
+- Node: `22` (cache `apps/web/package-lock.json`)
+- Postgres: `postgres:16-alpine` service on `api` and `e2e`
+
+## Local parity
+
+Use skill `run-ci-locally` to reproduce failures before pushing. API/e2e need a reachable Postgres.
+
+```yaml
+# ✅ GOOD — working-directory for web job
+defaults:
+  run:
+    working-directory: apps/web
+```
+
+## Do not
+
+- Reference `frontend/` or `backend/Api/` paths
+- Skip `npm run type-check` or `lint` in web job
+- Run e2e before api/web jobs succeed
+- Assume SQLite for CI — tests are PostgreSQL-only
+
+Fix failures with skill `fix-ci-failure`.

@@ -1,0 +1,101 @@
+/*
+  Design tokens — Layer 1 of the styling system.
+
+  Re-skin the product by editing the Brand block only (--brand*).
+  Semantic tokens below are wired to brand; neutrals stay independent.
+
+  Do NOT put hex / brand colors in Vue components or views.
+  Visual look lives here + @/ui primitives + apps/web/src/components chrome.
+  Views/modules compose those pieces; they do not invent styles.
+*/
+
+:root {
+  /* === Brand — ONLY place to re-skin the product === */
+  --brand: #1b4332; /* keep src/lib/pwaPolicy.ts pwaThemeColor in sync */
+  --brand-foreground: #ffffff;
+  --brand-muted: #2d6a4f;
+
+  --radius: 0.625rem;
+
+  /* Surfaces / neutrals */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* Semantic — wired to brand */
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: #e8eee9;
+  --secondary-foreground: #0f172a;
+  --muted: #e8eee9;
+  --muted-foreground: #5c6b63;
+  --accent: #e8eee9;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #d5ddd7;
+  --input: #d5ddd7;
+  --ring: var(--brand-muted);
+
+  --chart-1: #1b4332;
+  --chart-2: #2d6a4f;
+  --chart-3: #40916c;
+  --chart-4: #52b788;
+  --chart-5: #74c69d;
+
+  /* Sidebar — wired to brand (dark forest chrome) */
+  --sidebar: var(--brand);
+  --sidebar-foreground: var(--brand-foreground);
+  --sidebar-primary: var(--brand-foreground);
+  --sidebar-primary-foreground: var(--brand);
+  --sidebar-accent: var(--brand-muted);
+  --sidebar-accent-foreground: var(--brand-foreground);
+  --sidebar-border: color-mix(in srgb, var(--brand-foreground) 18%, var(--brand));
+  --sidebar-ring: var(--brand-muted);
+}
+
+.dark {
+  /* Keep brand green on dark surfaces so a re-skin still means editing --brand* */
+  --brand: #2d6a4f;
+  --brand-foreground: #ffffff;
+  --brand-muted: #40916c;
+
+  --background: #0a0f0c;
+  --foreground: #f4f7f5;
+  --card: #121a15;
+  --card-foreground: #f4f7f5;
+  --popover: #121a15;
+  --popover-foreground: #f4f7f5;
+
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: #1c2921;
+  --secondary-foreground: #f4f7f5;
+  --muted: #1c2921;
+  --muted-foreground: #a3b5aa;
+  --accent: #1c2921;
+  --accent-foreground: #f4f7f5;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #24332a;
+  --input: #24332a;
+  --ring: var(--brand-muted);
+
+  --chart-1: #2d6a4f;
+  --chart-2: #40916c;
+  --chart-3: #52b788;
+  --chart-4: #74c69d;
+  --chart-5: #95d5b2;
+
+  --sidebar: #0f1a14;
+  --sidebar-foreground: var(--brand-foreground);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: var(--brand-muted);
+  --sidebar-accent-foreground: var(--brand-foreground);
+  --sidebar-border: color-mix(in srgb, var(--brand-foreground) 12%, #0f1a14);
+  --sidebar-ring: var(--brand-muted);
+}

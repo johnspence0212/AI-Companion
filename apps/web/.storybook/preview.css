@@ -1,0 +1,11 @@
+/* SPA shell locks the document; the catalogue canvas must scroll. */
+html,
+body {
+  height: auto !important;
+  overflow: auto !important;
+}
+
+#storybook-root {
+  min-height: 100vh;
+  display: block;
+}

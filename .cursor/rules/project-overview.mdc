@@ -1,0 +1,75 @@
+---
+description: EnterpriseStarter layout, platform boundaries, security, and workflows
+alwaysApply: true
+---
+
+# Project Overview
+
+EnterpriseStarter is a Vue 3 + .NET modular monolith. Aspire is the default development entry point; Compose is a reference deployment.
+
+## Layout
+
+```
+├── apps/web/                 # Vue SPA; cookie/CSRF fetch client
+├── apps/api/                 # Thin executable host
+├── apps/platform/            # Identity, RBAC, data, audit, migrations
+├── apps/module-abstractions/ # Compile-time module contract and registry
+├── apps/api.tests/           # API integration tests
+├── aspire/
+│   ├── AppHost/       # Dev orchestration (not production)
+│   └── ServiceDefaults/
+├── e2e/               # Playwright
+├── docker-compose.yml # Optional deploy
+└── EnterpriseStarter.sln
+```
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | Vue 3, Pinia, Vue Router, Tailwind 4, template library `@/ui` (primitives + chrome), `fetch`; production PWA of the same SPA |
+| Backend | .NET 10 host + platform + module abstractions |
+| AuthN | Identity HttpOnly cookie and CSRF header |
+| AuthZ | Global roles with code-defined permission claims |
+| API | `/api/v1` |
+| Data | PostgreSQL-only shared `EnterpriseDbContext` migration stream |
+| Modules | Explicit compile-time registration; production registry empty |
+| Orchestration | Aspire (dev); Compose migrator + api + nginx (deploy) |
+| Tests | Vitest (web), xUnit (api), Playwright (e2e) |
+
+## Auth
+
+- Session: `enterprise_starter_auth`; the SPA stores no bearer token.
+- Authenticated mutations require `X-CSRF-TOKEN`.
+- Permission policies protect users, roles, and security audit.
+- Admins create users with temporary passwords; new users must change them.
+- There is no public registration.
+
+The baseline has no business modules, public registration, or multitenancy. OIDC, MFA, email, jobs, storage, and tenancy are product extensions.
+
+## Dev workflow
+
+```bash
+# Preferred
+dotnet run --project aspire/AppHost
+
+# Or standalone (Postgres required)
+dotnet run --project apps/api
+cd apps/web && npm run dev   # VITE_API_BASE_URL=/api/v1
+```
+
+## Deploy (optional)
+
+```bash
+cp .env.docker.example .env   # POSTGRES_PASSWORD + SEED_ADMIN_PASSWORD
+docker compose up --build     # http://localhost:8080
+```
+
+Not used for local dev. Skill: `run-docker-deploy`. Runbook: `.cursor/docs/DEPLOY-RUNBOOK.md`.
+
+## References
+
+- Architecture: [.cursor/docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+- Plan: [.cursor/docs/ENTERPRISE-PLAN.md](../docs/ENTERPRISE-PLAN.md)
+- File map: [.cursor/docs/FILE-INDEX.md](../docs/FILE-INDEX.md)
+- Skills: `.cursor/skills/`

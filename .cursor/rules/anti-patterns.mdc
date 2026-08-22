@@ -1,0 +1,54 @@
+---
+description: EnterpriseStarter architectural and security guardrails
+alwaysApply: true
+---
+
+# EnterpriseStarter guardrails
+
+| Requirement | Practice |
+|-------------|----------|
+| Backend boundary | Keep `apps/api` thin; platform code belongs in `apps/platform` |
+| Modules | Implement `IEnterpriseModule` and register explicitly at compile time |
+| Database | PostgreSQL through `EnterpriseDbContext` and shared platform migrations |
+| Browser auth | Identity HttpOnly cookie, `credentials: 'include'`, and CSRF header |
+| Authorization | `[Authorize]` plus code-defined permission policies |
+| API contract | Application endpoints under `/api/v1` |
+| API client | Shared native-fetch client in `apps/web/src/api/base/client.ts` |
+| UI | Import **only** from `@/ui` (primitives + chrome); brand via `--brand*` in `theme.css`; features never deep-import or invent styles |
+| Development | Aspire AppHost |
+| Reference deploy | Compose migrator completes before API replicas |
+| Secrets | Local environment/user secrets; commit templates only |
+
+## Examples
+
+```csharp
+// ❌ BAD
+await context.Database.EnsureCreatedAsync();
+
+// ✅ GOOD — platform initializer / migrator job
+await context.Database.MigrateAsync();
+```
+
+```typescript
+// ❌ BAD
+import axios from 'axios'
+import { Effect } from 'effect'
+sessionStorage.setItem('token', jwt)
+import { Button } from '@/components/ui/button'
+import PageBody from '@/components/PageBody.vue'
+
+// ✅ GOOD
+import { httpClient } from '@/api/base/client' // credentials: 'include'
+import { Button, PageBody } from '@/ui'
+```
+
+
+```csharp
+// ✅ GOOD
+[ApiController]
+[Authorize(Policy = ProductPermissions.RecordsRead)]
+[Route("api/v1/records")]
+public sealed class RecordsController : ControllerBase;
+```
+
+Do not add public registration, mandatory multitenancy, runtime module loading, or another database provider as incidental changes. Each is a product-level architecture decision.

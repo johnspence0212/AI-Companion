@@ -1,0 +1,52 @@
+---
+description: TypeScript/C# quality — no any, no empty catch, Prettier, no secrets
+alwaysApply: true
+---
+
+# Code Quality
+
+## TypeScript
+
+```typescript
+// ❌ BAD
+const data: any = await res.json()
+catch (e) {}
+
+// ✅ GOOD
+import type { User } from '@/api/types/schema'
+catch (e) {
+  error.value = 'Failed to load user'
+  throw e
+}
+```
+
+- No `any` — use explicit interfaces from `@/api/types/schema`
+- No empty `catch` blocks
+- No `console.log` in `apps/web` client code (use UI error state or dev-only logging sparingly)
+- Run `npm run type-check` and `npm run lint` before committing
+
+## Formatting (web)
+
+Prettier in `apps/web`: single quotes, no semicolons, 100 char width.
+
+```bash
+cd apps/web && npm run format && npm run lint
+```
+
+## C#
+
+- PascalCase public members; `_camelCase` private fields
+- Return proper HTTP status codes; use `ProblemDetails` for errors
+- Log exceptions server-side; never leak stack traces in production
+
+## Secrets
+
+```json
+// ❌ BAD — committed production secret
+"Secret": "my-production-key"
+
+// ✅ GOOD — dev placeholder + user secrets / env vars
+"Secret": "DEV_ONLY_CHANGE_ME_use_user_secrets_in_development"
+```
+
+Never commit `.env` with real keys. Templates: `apps/web/.env.example`, root `.env.docker.example` (`POSTGRES_PASSWORD`, `SEED_ADMIN_PASSWORD` — no JWT secret).

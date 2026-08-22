@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: enterprise_starter
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: enterprise_starter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U enterprise_starter -d enterprise_starter']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-shot migrator/seed — only this service applies EF migrations.
+  migrator:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: 'no'
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__Provider: PostgreSQL
+      Database__ConnectionString: Host=postgres;Port=5432;Database=enterprise_starter;Username=enterprise_starter;Password=${POSTGRES_PASSWORD}
+      Database__ApplyMigrationsOnStartup: 'true'
+      Database__ExitAfterMigrate: 'true'
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-admin@enterprisestarter.local}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DisableHttpsRedirection: 'true'
+      ForwardedHeaders__Enabled: 'true'
+      Database__Provider: PostgreSQL
+      Database__ConnectionString: Host=postgres;Port=5432;Database=enterprise_starter;Username=enterprise_starter;Password=${POSTGRES_PASSWORD}
+      Database__ApplyMigrationsOnStartup: 'false'
+      WebOrigin: ${WEB_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
+      WebOrigins__0: ${WEB_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-admin@enterprisestarter.local}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env}
+      Auth__CookieName: enterprise_starter_auth
+      Auth__CookieSecurePolicy: ${AUTH_COOKIE_SECURE_POLICY:-SameAsRequest}
+      Auth__DataProtectionKeysPath: /keys
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-enterprise-starter-api}
+    volumes:
+      - dataprotection_keys:/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8080/health/ready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  dataprotection_keys:

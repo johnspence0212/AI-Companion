@@ -1,0 +1,47 @@
+---
+description: Identity cookie, CSRF, global permission RBAC, and user lifecycle
+globs: apps/platform/**/*.cs,apps/api/Program.cs
+alwaysApply: false
+---
+
+# API Authentication
+
+## Identity + cookies
+
+- ASP.NET Identity (`ApplicationUser`, `IdentityRole`)
+- Application cookie (`Auth:CookieName`, HttpOnly, SameSite=Lax)
+- Antiforgery cookie + `X-CSRF-TOKEN` on authenticated mutations
+- Global roles seeded: protected `Admin` and `Member`
+
+## AuthController
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `GET /api/v1/auth/csrf` | Anonymous | Returns request token |
+| `POST /api/v1/auth/login` | Anonymous | Cookie session; rate limited |
+| `POST /api/v1/auth/logout` | `[Authorize]` | Signs out; CSRF required |
+| `GET /api/v1/auth/me` | `[Authorize]` | User, roles, permissions |
+| `PUT /api/v1/auth/profile` | `[Authorize]` | Update profile; CSRF required |
+| `POST /api/v1/auth/change-password` | `[Authorize]` | Change password; CSRF required |
+
+## Password / lockout
+
+Configured in `AddEnterprisePlatform`: minimum 12 characters, complexity, lockout after 5 failures for 15 minutes.
+
+## Seed
+
+`InitializeEnterpriseDatabaseAsync` seeds roles and an optional bootstrap admin. Bootstrap, created, and reset users receive temporary passwords and `MustChangePassword=true`.
+
+There is no public registration endpoint. Authorized admins manage users through `/api/v1/users`.
+
+## Authorization
+
+Roles contain `permission` claims. Policies check claims, not role names. RBAC is global to the application. Module permissions join the catalog at compile time.
+
+## Do not
+
+- Return password hashes in DTOs
+- Reintroduce JWT bearer as the default browser session model
+- Add registration without a deliberate product/security decision
+- Skip CSRF for authenticated state-changing cookie requests
+- Authorize product behavior by role name instead of permission policy
