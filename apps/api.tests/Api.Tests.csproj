@@ -24,8 +24,10 @@
     <Compile Include="DeployHardeningTests.cs" />
     <Compile Include="ModuleExtensionTests.cs" />
     <Compile Include="ApiIntegrationTests.cs" />
+    <Compile Include="CompanionOwnershipTests.cs" />
     <Compile Include="TestCollection.cs" />
     <ProjectReference Include="..\api\EnterpriseStarter.Api.csproj" />
+    <ProjectReference Include="..\companion\EnterpriseStarter.Companion.csproj" />
     <ProjectReference Include="..\platform\EnterpriseStarter.Platform.csproj" />
     <ProjectReference Include="..\test-module\EnterpriseStarter.TestModule.csproj" />
   </ItemGroup>

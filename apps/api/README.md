@@ -51,7 +51,7 @@ There is no public registration endpoint. Admins create users with temporary pas
 
 ## Global RBAC and administration
 
-Roles contain permission claims. `Admin` receives all registered permissions; `Member` starts empty.
+Roles contain permission claims. `Admin` receives all registered permissions; `Member` receives product-module permissions.
 
 | Method | Path | Notes |
 |--------|------|-------|
@@ -61,7 +61,7 @@ Roles contain permission claims. `Admin` receives all registered permissions; `M
 
 ## Modules
 
-`ModuleRegistry.Production` is empty. Product modules implement `IEnterpriseModule` and are registered explicitly at compile time. Runtime module discovery and per-customer toggles are not provided.
+`ModuleRegistry.Production` registers the Companion module. Product modules implement `IEnterpriseModule` and are registered explicitly at compile time. Runtime module discovery and per-customer toggles are not provided.
 
 ## Migrations
 

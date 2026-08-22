@@ -7,7 +7,7 @@ Browser
   └─ same-origin /api/v1
        └─ API host (apps/api)
             ├─ platform (apps/platform)
-            ├─ compile-time modules (none in production registry)
+            ├─ compile-time modules (Companion in production registry)
             └─ PostgreSQL
 
 Development: Aspire → PostgreSQL + API + Vite
@@ -18,12 +18,13 @@ Reference deployment: nginx → API; PostgreSQL + one-shot migrator
 
 - `apps/api` is the composition root. `Program.cs` selects `ModuleRegistry.Production`, adds the platform, optionally initializes the database, and maps endpoints.
 - `apps/platform` owns Identity, cookie/CSRF security, global RBAC, users, roles, security audit, EF Core, and the shared migrations.
-- `apps/module-abstractions` defines `IEnterpriseModule`, module permissions, and the explicit production registry.
+- `apps/module-abstractions` defines `IEnterpriseModule` and module permissions.
+- `apps/companion` is the AI Companion product module. `ModuleRegistry.Production` lives there so abstractions do not depend on the product.
 - A product module is a compile-time dependency. It contributes services, routes, permissions, and EF model configuration; there is no runtime package scanning or enablement database.
 
 ## Web boundary
 
-`apps/web` uses Vue 3, Pinia, Vue Router, and a shared `fetch` client. The API base normalizes to `/api/v1`; cookie credentials and CSRF handling are centralized in `src/api/base/client.ts`. Product routes and navigation are aggregated from the empty compile-time registry in `src/modules/registry.ts`.
+`apps/web` uses Vue 3, Pinia, Vue Router, and a shared `fetch` client. The API base normalizes to `/api/v1`; cookie credentials and CSRF handling are centralized in `src/api/base/client.ts`. Product routes and navigation are aggregated from the compile-time registry in `src/modules/registry.ts`, which registers the Companion web module.
 
 Production builds (`npm run build` / nginx) are installable as a PWA of **the same SPA**: same origin, cookie session, and CSRF. Default `npm run dev` and Aspire do not register a service worker; `npm run dev:pwa` opts in for local install testing. The service worker caches the application shell only and never treats `/api` as an SPA navigation.
 
@@ -31,7 +32,7 @@ Production builds (`npm run build` / nginx) are installable as a PWA of **the sa
 
 Identity authenticates users and issues `enterprise_starter_auth`, an HttpOnly, SameSite=Lax cookie. `GET /api/v1/auth/csrf` returns a request token. Authenticated non-safe methods require that token in `X-CSRF-TOKEN`.
 
-Authorization is global to the application. Identity roles contain `permission` claims. The protected `Admin` role receives every registered permission and `Member` starts empty. Policies evaluate permission claims; user, role, and audit administration are not tenant-scoped.
+Authorization is global to the application. Identity roles contain `permission` claims. The protected `Admin` role receives every registered permission. `Member` is synchronized to product-module permissions so owners have full own-workspace capabilities without administration. Policies evaluate permission claims; user, role, and audit administration are not tenant-scoped.
 
 Admins create users with temporary passwords. New and reset users have `MustChangePassword=true`; the web router restricts them to the password-change flow. Important authentication and administrative actions are persisted as `SecurityAuditEvent` records.
 
@@ -41,4 +42,4 @@ EnterpriseStarter supports PostgreSQL only. `EnterpriseDbContext` and migrations
 
 ## Product boundaries
 
-The baseline intentionally has no business modules, public registration, or multitenancy. OIDC, MFA, email, jobs, storage, and tenancy are optional architecture choices. Add them only with product-specific security, lifecycle, operations, and testing requirements.
+The baseline intentionally has no public registration or multitenancy. Companion is the product module. OIDC, MFA, email, jobs, storage, and tenancy are optional architecture choices. Add them only with product-specific security, lifecycle, operations, and testing requirements.

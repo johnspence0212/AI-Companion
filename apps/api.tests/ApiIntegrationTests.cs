@@ -170,6 +170,9 @@ public sealed class ApiIntegrationTests(CustomWebApplicationFactory factory)
             Assert.Equal(HttpStatusCode.BadRequest, delete.StatusCode);
 
             var memberRole = Assert.Single(roles.Items, item => item.Name == "Member");
+            Assert.Contains("projects.read", memberRole.Permissions);
+            Assert.Contains("aiclients.manage", memberRole.Permissions);
+            Assert.DoesNotContain("users.manage", memberRole.Permissions);
             var memberUpdate = await SendAsync(
                 admin,
                 HttpMethod.Put,

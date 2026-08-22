@@ -14,6 +14,11 @@ public interface IEntityModelContributor
     void Configure(ModelBuilder modelBuilder);
 }
 
+public interface IOwnedRecord
+{
+    string OwnerUserId { get; }
+}
+
 public interface IEnterpriseModule
 {
     string Name { get; }
@@ -21,9 +26,4 @@ public interface IEnterpriseModule
     IReadOnlyList<IEntityModelContributor> ModelContributors { get; }
     void AddServices(IServiceCollection services, IConfiguration configuration);
     void MapEndpoints(IEndpointRouteBuilder endpoints);
-}
-
-public static class ModuleRegistry
-{
-    public static IReadOnlyList<IEnterpriseModule> Production { get; } = [];
 }

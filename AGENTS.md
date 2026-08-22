@@ -8,19 +8,19 @@ Use `.cursor/rules/` for conventions, `.cursor/skills/` for task workflows, and
 | Area | EnterpriseStarter decision |
 |------|----------------------------|
 | Architecture | Modular monolith with a thin host and reusable platform |
-| Backend | `apps/api`, `apps/platform`, `apps/module-abstractions` |
+| Backend | `apps/api`, `apps/platform`, `apps/companion`, `apps/module-abstractions` |
 | API | Versioned routes under `/api/v1` |
 | Data | PostgreSQL only; one shared EF migration stream in `apps/platform/Migrations` |
 | AuthN | Identity HttpOnly cookie plus CSRF validation |
 | AuthZ | Global Identity roles containing code-defined permission claims |
 | Users | Admin-created accounts with temporary passwords and forced password change |
-| Modules | Explicit compile-time registry; `ModuleRegistry.Production` is empty |
+| Modules | Explicit compile-time registry; `ModuleRegistry.Production` registers Companion |
 | Audit | Persistent security audit events and permission-protected audit API |
 | Local | Aspire AppHost |
 | Reference deploy | Compose with Postgres, migrator, API, and nginx web |
 | PWA | Production SPA is installable; same cookie session; `/api` never cached |
 
-The starter has no business modules, public registration, or multitenancy.
+The starter has no public registration or multitenancy. Companion is the product module.
 OIDC, MFA, email, jobs, storage, and tenancy require a product decision and implementation.
 
 ## Start here
@@ -39,8 +39,9 @@ OIDC, MFA, email, jobs, storage, and tenancy require a product decision and impl
 
 - `apps/api` — executable host and configuration
 - `apps/platform` — Identity, global RBAC, controllers, EF model/migrations, security audit
-- `apps/module-abstractions` — module contract and production registry
-- `apps/web` — Vue SPA, auth store, admin views, empty web module registry
+- `apps/module-abstractions` — module contract
+- `apps/companion` — AI Companion product module (permissions now; domain next)
+- `apps/web` — Vue SPA, auth store, admin views, companion web module stub
 - `aspire/AppHost` — development orchestration
 - `apps/api.tests` and `e2e` — integration and browser tests
 - `.cursor/docs/FILE-INDEX.md` — detailed file map

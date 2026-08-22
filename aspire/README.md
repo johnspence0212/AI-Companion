@@ -42,9 +42,10 @@ Use the **proxied web** URL from the dashboard so login cookies work.
 |---------|------|
 | `aspire/AppHost` | Orchestrator (dev only) |
 | `aspire/ServiceDefaults` | OpenTelemetry, health, resilience |
-| `apps/api` | Thin host; references platform, module abstractions, ServiceDefaults |
+| `apps/api` | Thin host; references companion, platform, module abstractions, ServiceDefaults |
 | `apps/platform` | Identity, RBAC, data, audit, and migrations |
-| `apps/module-abstractions` | Compile-time module contract and empty production registry |
+| `apps/companion` | AI Companion product module and production registry |
+| `apps/module-abstractions` | Compile-time module contract |
 
 ## OpenTelemetry
 

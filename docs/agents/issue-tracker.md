@@ -23,3 +23,11 @@ project. GitHub Issues and local markdown files are not the canonical tracker.
 - Claim a frontier ticket by assigning it before doing any work.
 - Record the answer in a resolution comment, close the ticket, then add a named link and
   one-line gist to the map's `Decisions so far`.
+
+## Maps
+
+- Spec (done): [Specify AI Companion V1 as a Linear replacement](https://linear.app/johnspence/issue/JOH-19/specify-ai-companion-v1-as-a-linear-replacement)
+- Implementation (active): [Build AI Companion V1 through the golden path](https://linear.app/johnspence/issue/JOH-33/build-ai-companion-v1-through-the-golden-path)
+
+The implementation map **carries execution**. Its children are build slices. Product
+decisions stay on the spec map and in `CONTEXT.md`.

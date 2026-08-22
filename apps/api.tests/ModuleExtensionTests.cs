@@ -1,3 +1,4 @@
+using EnterpriseStarter.Companion;
 using EnterpriseStarter.ModuleAbstractions;
 using EnterpriseStarter.Platform;
 using EnterpriseStarter.TestModule;
@@ -60,8 +61,13 @@ public sealed class ModuleExtensionTests
     }
 
     [Fact]
-    public void ProductionRegistry_RemainsEmpty()
+    public void ProductionRegistry_RegistersCompanionModuleAndPermissions()
     {
-        Assert.Empty(ModuleRegistry.Production);
+        var companion = Assert.Single(ModuleRegistry.Production);
+        Assert.Equal("Companion", companion.Name);
+        Assert.Equal("companion", Assert.Single(companion.ModelContributors).Key);
+        Assert.Equal(CompanionPermissions.All, companion.Permissions.Select(permission => permission.Key));
+        Assert.Contains(companion.Permissions, permission => permission.Key == CompanionPermissions.ProjectsRead);
+        Assert.Contains(companion.Permissions, permission => permission.Key == CompanionPermissions.AiClientsManage);
     }
 }

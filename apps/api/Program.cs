@@ -1,3 +1,4 @@
+using EnterpriseStarter.Companion;
 using EnterpriseStarter.ModuleAbstractions;
 using EnterpriseStarter.Platform;
 

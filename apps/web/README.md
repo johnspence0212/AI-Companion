@@ -74,7 +74,7 @@ Guards use `meta.requiresAuth`, `meta.guest`, and `meta.permission`, and enforce
 
 ## Modules
 
-`src/modules/registry.ts` is intentionally empty. Product modules add routes and navigation through explicit compile-time registration.
+`src/modules/registry.ts` registers the Companion web module. Product modules add routes and navigation through explicit compile-time registration.
 
 ## UI / theme (compose only)
 

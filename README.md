@@ -37,7 +37,8 @@ Default seeded admin (Development):
 │   ├── web/                 # Vue 3 SPA and typed fetch client
 │   ├── api/                 # Thin executable host
 │   ├── platform/            # Identity, RBAC, data, audit, controllers
-│   ├── module-abstractions/ # Compile-time module contract and registry
+│   ├── companion/           # AI Companion product module
+│   ├── module-abstractions/ # Compile-time module contract
 │   └── api.tests/           # API integration tests
 ├── aspire/
 │   ├── AppHost/         # Local: Postgres + API + Vite (not for production)
@@ -58,7 +59,7 @@ Default seeded admin (Development):
 | Platform | `apps/platform`: Identity, global roles/permissions, audit, EF Core |
 | AuthN | HttpOnly Identity cookie + antiforgery token |
 | AuthZ | Global Identity roles with code-defined permission claims |
-| Modules | Explicit compile-time registration; production registry is empty |
+| Modules | Explicit compile-time registration; Companion is in the production registry |
 | DB | **PostgreSQL only** (Aspire local + Compose deploy) |
 | Orchestration | Aspire AppHost (dev); Compose (deploy) |
 

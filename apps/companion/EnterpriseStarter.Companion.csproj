@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>EnterpriseStarter.Companion</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\module-abstractions\EnterpriseStarter.ModuleAbstractions.csproj" />
+    <ProjectReference Include="..\platform\EnterpriseStarter.Platform.csproj" />
+  </ItemGroup>
+</Project>

@@ -5,6 +5,7 @@ COPY global.json ./
 COPY Directory.Build.props ./
 COPY aspire/ServiceDefaults/ aspire/ServiceDefaults/
 COPY apps/module-abstractions/ apps/module-abstractions/
+COPY apps/companion/ apps/companion/
 COPY apps/platform/ apps/platform/
 COPY apps/api/ apps/api/
 

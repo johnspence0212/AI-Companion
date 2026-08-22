@@ -13,7 +13,8 @@ EnterpriseStarter is a Vue 3 + .NET modular monolith. Aspire is the default deve
 ├── apps/web/                 # Vue SPA; cookie/CSRF fetch client
 ├── apps/api/                 # Thin executable host
 ├── apps/platform/            # Identity, RBAC, data, audit, migrations
-├── apps/module-abstractions/ # Compile-time module contract and registry
+├── apps/companion/           # AI Companion product module
+├── apps/module-abstractions/ # Compile-time module contract
 ├── apps/api.tests/           # API integration tests
 ├── aspire/
 │   ├── AppHost/       # Dev orchestration (not production)
@@ -28,12 +29,12 @@ EnterpriseStarter is a Vue 3 + .NET modular monolith. Aspire is the default deve
 | Layer | Tech |
 |-------|------|
 | Frontend | Vue 3, Pinia, Vue Router, Tailwind 4, template library `@/ui` (primitives + chrome), `fetch`; production PWA of the same SPA |
-| Backend | .NET 10 host + platform + module abstractions |
+| Backend | .NET 10 host + platform + companion + module abstractions |
 | AuthN | Identity HttpOnly cookie and CSRF header |
 | AuthZ | Global roles with code-defined permission claims |
 | API | `/api/v1` |
 | Data | PostgreSQL-only shared `EnterpriseDbContext` migration stream |
-| Modules | Explicit compile-time registration; production registry empty |
+| Modules | Explicit compile-time registration; Companion is in the production registry |
 | Orchestration | Aspire (dev); Compose migrator + api + nginx (deploy) |
 | Tests | Vitest (web), xUnit (api), Playwright (e2e) |
 
@@ -45,7 +46,7 @@ EnterpriseStarter is a Vue 3 + .NET modular monolith. Aspire is the default deve
 - Admins create users with temporary passwords; new users must change them.
 - There is no public registration.
 
-The baseline has no business modules, public registration, or multitenancy. OIDC, MFA, email, jobs, storage, and tenancy are product extensions.
+The baseline has no public registration or multitenancy. Companion is the product module. OIDC, MFA, email, jobs, storage, and tenancy are product extensions.
 
 ## Dev workflow
 

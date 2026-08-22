@@ -43,6 +43,7 @@ public static class PlatformExtensions
 
         services.AddSingleton(TimeProvider.System);
         services.AddHttpContextAccessor();
+        services.AddScoped<IOwnerScope, HttpOwnerScope>();
         services.Configure<DatabaseOptions>(configuration.GetSection(DatabaseOptions.SectionName));
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
@@ -161,7 +162,11 @@ public static class PlatformExtensions
         var roleManager = provider.GetRequiredService<RoleManager<IdentityRole>>();
         var permissionCatalog = provider.GetRequiredService<PermissionCatalog>();
         await EnsureRoleAsync(roleManager, AppRoles.Admin, permissionCatalog.All, synchronizePermissions: true);
-        await EnsureRoleAsync(roleManager, AppRoles.Member, [], synchronizePermissions: false);
+        var memberPermissions = permissionCatalog.Definitions
+            .Where(definition => !AppPermissions.All.Contains(definition.Key))
+            .Select(definition => definition.Key)
+            .ToArray();
+        await EnsureRoleAsync(roleManager, AppRoles.Member, memberPermissions, synchronizePermissions: true);
 
         var seed = provider.GetRequiredService<
             Microsoft.Extensions.Options.IOptions<SeedOptions>>().Value;

@@ -17,7 +17,7 @@ Key files for the PostgreSQL, cookie/CSRF, global-RBAC modular monolith.
 | File | Role |
 |------|------|
 | `Program.cs` | Thin composition root and optional migration execution |
-| `EnterpriseStarter.Api.csproj` | References platform, abstractions, ServiceDefaults |
+| `EnterpriseStarter.Api.csproj` | References companion, platform, abstractions, ServiceDefaults |
 | `appsettings.json` | PostgreSQL, cookie, seed, CORS, and rate limits |
 | `Dockerfile` | Shared API/migrator image |
 
@@ -36,17 +36,18 @@ Key files for the PostgreSQL, cookie/CSRF, global-RBAC modular monolith.
 
 | File | Role |
 |------|------|
-| `IEnterpriseModule.cs` | Module contract, permissions, empty production registry |
+| `IEnterpriseModule.cs` | Module contract and permissions |
 
 ## API tests
 
 | File | Role |
 |------|------|
 | `apps/api.tests/ApiIntegrationTests.cs` | Cookie/CSRF, lifecycle, global RBAC, audit, registration absence |
-| `apps/api.tests/ModuleExtensionTests.cs` | Compile-time module extension and empty production registry |
+| `apps/api.tests/ModuleExtensionTests.cs` | Compile-time module extension and Companion production registry |
 | `apps/api.tests/DeployHardeningTests.cs` | Security/correlation headers |
 | `apps/api.tests/CustomWebApplicationFactory.cs` | Test host factory |
 | `apps/test-module/` | Test-only module proving extension seams |
+| `apps/companion/` | AI Companion module, permissions, domain model, and `ModuleRegistry.Production` |
 
 ## Web (`apps/web`)
 
@@ -72,7 +73,7 @@ Key files for the PostgreSQL, cookie/CSRF, global-RBAC modular monolith.
 | `src/api/rolesApi.ts` | Global roles and permission catalog |
 | `src/api/securityAuditApi.ts` | Security audit API |
 | `src/api/types/schema.ts` | Types + light response parsers |
-| `src/modules/registry.ts` | Empty compile-time product-module registry |
+| `src/modules/registry.ts` | Compile-time product-module registry (Companion stub) |
 | `src/views/LoginView.vue` | Login page |
 | `src/views/HomeView.vue` | Authenticated home shell |
 | `src/views/UsersView.vue` | Global user management |

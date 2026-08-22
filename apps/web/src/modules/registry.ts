@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
+import { companionModule } from './companion'
 
 export interface ModuleNavigationItem {
   label: string
@@ -15,10 +16,9 @@ export interface AppModule {
 }
 
 /**
- * Product modules are registered at build time. Keep the starter empty; applications can add
- * lazy route components with `component: () => import('./ExampleView.vue')`.
+ * Product modules are registered at build time.
  */
-export const moduleRegistry: readonly AppModule[] = []
+export const moduleRegistry: readonly AppModule[] = [companionModule]
 
 export const moduleRoutes: RouteRecordRaw[] = moduleRegistry.flatMap((module) => module.routes)
 export const moduleNavigation: ModuleNavigationItem[] = moduleRegistry.flatMap(

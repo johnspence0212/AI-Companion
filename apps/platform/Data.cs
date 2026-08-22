@@ -1,4 +1,7 @@
+using System.Linq.Expressions;
+using System.Reflection;
 using EnterpriseStarter.ModuleAbstractions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -7,13 +10,45 @@ using Microsoft.Extensions.Configuration;
 
 namespace EnterpriseStarter.Platform;
 
-public sealed class EnterpriseDbContext(
-    DbContextOptions<EnterpriseDbContext> options,
-    IEnumerable<IEntityModelContributor>? contributors = null)
-    : IdentityDbContext<ApplicationUser>(options)
+public interface IOwnerScope
 {
-    private readonly IReadOnlyList<IEntityModelContributor> _contributors =
-        contributors?.ToArray() ?? [];
+    string? OwnerUserId { get; }
+}
+
+public sealed class HttpOwnerScope(IHttpContextAccessor accessor) : IOwnerScope
+{
+    public string? OwnerUserId =>
+        accessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+public sealed class NullOwnerScope : IOwnerScope
+{
+    public static NullOwnerScope Instance { get; } = new();
+    public string? OwnerUserId => null;
+}
+
+public sealed class EnterpriseDbContext : IdentityDbContext<ApplicationUser>
+{
+    private static readonly MethodInfo ApplyOwnershipFilterMethod =
+        typeof(EnterpriseDbContext).GetMethod(
+            nameof(ApplyOwnershipFilter),
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private readonly IReadOnlyList<IEntityModelContributor> _contributors;
+
+    public EnterpriseDbContext(
+        DbContextOptions<EnterpriseDbContext> options,
+        IEnumerable<IEntityModelContributor>? contributors = null,
+        IOwnerScope? ownerScope = null)
+        : base(options)
+    {
+        _contributors = contributors?.ToArray() ?? [];
+        OwnerScope = ownerScope ?? NullOwnerScope.Instance;
+    }
+
+    public IOwnerScope OwnerScope { get; }
+
+    public string? OwnerUserId => OwnerScope.OwnerUserId;
 
     internal string ModelContributorKey => string.Join(
         "|",
@@ -49,6 +84,30 @@ public sealed class EnterpriseDbContext(
         {
             contributor.Configure(builder);
         }
+
+        ApplyOwnershipFilters(builder);
+    }
+
+    private void ApplyOwnershipFilters(ModelBuilder builder)
+    {
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            var clr = entityType.ClrType;
+            if (clr is null || !typeof(IOwnedRecord).IsAssignableFrom(clr) || entityType.IsOwned())
+            {
+                continue;
+            }
+
+            ApplyOwnershipFilterMethod.MakeGenericMethod(clr).Invoke(this, [builder]);
+        }
+    }
+
+    private void ApplyOwnershipFilter<TEntity>(ModelBuilder builder)
+        where TEntity : class, IOwnedRecord
+    {
+        Expression<Func<TEntity, bool>> filter = entity =>
+            OwnerUserId != null && entity.OwnerUserId == OwnerUserId;
+        builder.Entity<TEntity>().HasQueryFilter(filter);
     }
 }
 
@@ -79,6 +138,27 @@ public sealed class EnterpriseDbContextFactory : IDesignTimeDbContextFactory<Ent
             ?? "Host=localhost;Port=5432;Database=enterprise_starter;Username=enterprise_starter;Password=enterprise_starter";
         return new EnterpriseDbContext(
             new DbContextOptionsBuilder<EnterpriseDbContext>().UseNpgsql(connection).Options,
-            []);
+            LoadProductionContributors());
+    }
+
+    private static IReadOnlyList<IEntityModelContributor> LoadProductionContributors()
+    {
+        try
+        {
+            var assembly = Assembly.Load("EnterpriseStarter.Companion");
+            var registryType = assembly.GetType("EnterpriseStarter.Companion.ModuleRegistry");
+            if (registryType is null)
+            {
+                return [];
+            }
+
+            var production = registryType.GetProperty("Production")?.GetValue(null)
+                as IReadOnlyList<IEnterpriseModule>;
+            return production?.SelectMany(module => module.ModelContributors).ToArray() ?? [];
+        }
+        catch (FileNotFoundException)
+        {
+            return [];
+        }
     }
 }
