@@ -30,6 +30,7 @@ public sealed class CompanionModule : IEnterpriseModule
         services.AddScoped<AiClientService>();
         services.AddScoped<ProjectService>();
         services.AddScoped<DocumentService>();
+        services.AddScoped<IssueService>();
         services.AddScoped<IAfterSignInHandler>(provider => provider.GetRequiredService<ProjectService>());
         services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, AiClientAuthenticationHandler>(AiClientAuth.Scheme, _ => { });
@@ -46,6 +47,7 @@ public sealed class CompanionModule : IEnterpriseModule
             .WithTools<CompanionPingTools>()
             .WithTools<ProjectTools>()
             .WithTools<DocumentTools>()
+            .WithTools<IssueTools>()
             .WithResources<ProjectContextResources>();
     }
 
@@ -122,6 +124,7 @@ public sealed class CompanionModule : IEnterpriseModule
             .RequireAuthorization(CompanionPermissions.ProjectsManage);
 
         DocumentEndpoints.Map(endpoints);
+        IssueEndpoints.Map(endpoints);
 
         var clients = endpoints.MapGroup("/api/v1/ai-clients")
             .RequireAuthorization(CompanionPermissions.AiClientsManage);
