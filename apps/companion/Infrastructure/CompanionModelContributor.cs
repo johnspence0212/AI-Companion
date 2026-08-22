@@ -1,6 +1,7 @@
 using EnterpriseStarter.Companion.Domain;
 using EnterpriseStarter.ModuleAbstractions;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace EnterpriseStarter.Companion.Infrastructure;
 
@@ -18,6 +19,8 @@ public sealed class CompanionModelContributor : IEntityModelContributor
             entity.Property(project => project.Slug).HasMaxLength(128).IsRequired();
             entity.HasIndex(project => new { project.OwnerUserId, project.Slug }).IsUnique();
             entity.HasIndex(project => project.OwnerUserId);
+            entity.HasGeneratedTsVectorColumn(project => project.SearchVector, "simple", project => new { project.Name });
+            entity.HasIndex(project => project.SearchVector).HasMethod("GIN");
             entity.HasOne(project => project.ContextDocument)
                 .WithOne()
                 .HasForeignKey<Project>(project => project.ContextDocumentId)
@@ -69,6 +72,11 @@ public sealed class CompanionModelContributor : IEntityModelContributor
                 .HasForeignKey(revision => revision.DocumentId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(revision => new { revision.DocumentId, revision.CreatedAt });
+            entity.HasGeneratedTsVectorColumn(
+                revision => revision.SearchVector,
+                "simple",
+                revision => new { revision.Title, revision.Body });
+            entity.HasIndex(revision => revision.SearchVector).HasMethod("GIN");
         });
 
         modelBuilder.Entity<Tag>(entity =>
@@ -135,6 +143,11 @@ public sealed class CompanionModelContributor : IEntityModelContributor
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(issue => new { issue.ProjectId, issue.Status, issue.Rank });
             entity.HasIndex(issue => issue.OwnerUserId);
+            entity.HasGeneratedTsVectorColumn(
+                issue => issue.SearchVector,
+                "simple",
+                issue => new { issue.Title, issue.Description });
+            entity.HasIndex(issue => issue.SearchVector).HasMethod("GIN");
         });
 
         modelBuilder.Entity<IssueBlocker>(entity =>
@@ -225,6 +238,8 @@ public sealed class CompanionModelContributor : IEntityModelContributor
                 .OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(activity => new { activity.OwnerUserId, activity.OccurredAt });
             entity.HasIndex(activity => new { activity.RecordType, activity.RecordId });
+            entity.HasGeneratedTsVectorColumn(activity => activity.SearchVector, "simple", activity => new { activity.Summary });
+            entity.HasIndex(activity => activity.SearchVector).HasMethod("GIN");
         });
 
         modelBuilder.Entity<SavedView>(entity =>

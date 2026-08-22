@@ -32,6 +32,7 @@
     <Compile Include="DailyTests.cs" />
     <Compile Include="InboxTests.cs" />
     <Compile Include="SessionActivityTests.cs" />
+    <Compile Include="SearchTests.cs" />
     <Compile Include="TestCollection.cs" />
     <ProjectReference Include="..\api\EnterpriseStarter.Api.csproj" />
     <ProjectReference Include="..\companion\EnterpriseStarter.Companion.csproj" />

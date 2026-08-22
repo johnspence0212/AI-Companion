@@ -1,4 +1,5 @@
 using EnterpriseStarter.ModuleAbstractions;
+using NpgsqlTypes;
 
 namespace EnterpriseStarter.Companion.Domain;
 
@@ -59,6 +60,7 @@ public sealed class Project : MutableOwnedRecord
     public ICollection<Issue> Issues { get; set; } = [];
     public ICollection<Session> Sessions { get; set; } = [];
     public ICollection<DocumentProject> DocumentLinks { get; set; } = [];
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
 }
 
 public sealed class Folder : MutableOwnedRecord
@@ -94,6 +96,7 @@ public sealed class Revision : OwnedRecord
     public string ActorUserId { get; set; } = string.Empty;
     public Guid? ActorAiClientId { get; set; }
     public string Kind { get; set; } = "save";
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
 }
 
 public sealed class Tag : MutableOwnedRecord
@@ -148,6 +151,7 @@ public sealed class Issue : MutableOwnedRecord
     public ICollection<IssueBlocker> Blockers { get; set; } = [];
     public ICollection<IssueBlocker> Blocking { get; set; } = [];
     public ICollection<IssueTag> TagLinks { get; set; } = [];
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
 }
 
 public sealed class IssueBlocker
@@ -211,6 +215,7 @@ public sealed class Activity : OwnedRecord
     public Guid? SessionId { get; set; }
     public Session? Session { get; set; }
     public string Summary { get; set; } = string.Empty;
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
 }
 
 public sealed class SavedView : MutableOwnedRecord
