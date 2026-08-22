@@ -19,6 +19,11 @@ public interface IOwnedRecord
     string OwnerUserId { get; }
 }
 
+public interface IAfterSignInHandler
+{
+    Task HandleAsync(string userId, CancellationToken cancellationToken);
+}
+
 public interface IEnterpriseModule
 {
     string Name { get; }

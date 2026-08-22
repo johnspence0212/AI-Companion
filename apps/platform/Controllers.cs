@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using EnterpriseStarter.ModuleAbstractions;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -40,7 +41,8 @@ public sealed class AuthController(
     SignInManager<ApplicationUser> signInManager,
     ISecurityAuditService audit,
     IAntiforgery antiforgery,
-    TimeProvider timeProvider) : ControllerBase
+    TimeProvider timeProvider,
+    IEnumerable<IAfterSignInHandler> afterSignInHandlers) : ControllerBase
 {
     [AllowAnonymous]
     [HttpGet("csrf")]
@@ -83,6 +85,11 @@ public sealed class AuthController(
         user.UpdatedAt = user.LastLoginAt.Value;
         await userManager.UpdateAsync(user);
         await audit.WriteAsync("auth.login", "succeeded", user.Id);
+        foreach (var handler in afterSignInHandlers)
+        {
+            await handler.HandleAsync(user.Id, HttpContext.RequestAborted);
+        }
+
         return Ok(await ToResponseAsync(user, userManager, roleManager));
     }
 
