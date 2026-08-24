@@ -7,7 +7,6 @@ import {
   DataListEmpty,
   DataListItem,
   PageBody,
-  PageHeader,
   StatusMessage,
   WorkbenchComposer,
   WorkbenchPanes,
@@ -31,6 +30,14 @@ const heading = computed(() =>
 
 function label(item: DailyItem) {
   return item.customText ?? item.issueTitle ?? 'Daily Item'
+}
+
+function when(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 function detail(item: DailyItem) {
@@ -94,12 +101,10 @@ onMounted(() => {
 
 <template>
   <PageBody variant="workbench">
-    <PageHeader size="compact" title="Today" :description="heading" />
-
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="loading" class="px-4 py-2">Loading Daily…</StatusMessage>
 
-    <WorkbenchPanes layout="home" list-title="Daily" detail-title="Waiting">
+    <WorkbenchPanes layout="home" :list-title="heading" detail-title="Waiting">
       <template #list-toolbar>
         <WorkbenchComposer
           v-model="draft"
@@ -122,7 +127,13 @@ onMounted(() => {
             :description="item.completedAt ? `${detail(item)} · done` : detail(item)"
           >
             <template v-if="!item.completedAt" #actions>
-              <Button size="sm" variant="outline" :disabled="saving" @click="complete(item)">
+              <Button
+                size="sm"
+                variant="outline"
+                shape="square"
+                :disabled="saving"
+                @click="complete(item)"
+              >
                 Complete
               </Button>
             </template>
@@ -139,7 +150,7 @@ onMounted(() => {
               v-for="item in daily?.carryover ?? []"
               :key="item.id"
               :title="label(item)"
-              :description="item.date"
+              :description="when(item.date)"
             />
           </DataList>
         </WorkbenchSection>

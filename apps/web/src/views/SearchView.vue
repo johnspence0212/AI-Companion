@@ -12,7 +12,6 @@ import {
   FormSlideout,
   MarkdownSource,
   PageBody,
-  PageHeader,
   StatusMessage,
   WorkbenchComposer,
   WorkbenchPanes,
@@ -37,7 +36,12 @@ const groups = computed(() => [
   { key: 'activity', label: 'Activity', items: results.value?.activity ?? [] },
 ])
 
-const hasResults = computed(() => groups.value.some((group) => group.items.length > 0))
+const visibleGroups = computed(() => groups.value.filter((group) => group.items.length > 0))
+
+function when(value: string) {
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
+}
 
 function resetOpened() {
   openedDocument.value = null
@@ -107,20 +111,14 @@ function markdown() {
 
 <template>
   <PageBody variant="workbench">
-    <PageHeader
-      size="compact"
-      title="Search"
-      description="Projects, Documents, Issues, and Activity."
-    />
-
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
 
-    <WorkbenchPanes list-title="Results">
+    <WorkbenchPanes>
       <template #list-toolbar>
         <WorkbenchComposer
           v-model="query"
           name="search"
-          placeholder="Search"
+          placeholder="Search Projects, Documents, Issues, and Activity"
           submit-label="Search"
           :pending="loading"
           @submit="runSearch"
@@ -130,18 +128,17 @@ function markdown() {
         <DataList v-if="!results && !loading" variant="flush">
           <DataListEmpty>Type a query to search the library and Projects.</DataListEmpty>
         </DataList>
-        <DataList v-else-if="results && !hasResults" variant="flush">
+        <DataList v-else-if="results && visibleGroups.length === 0" variant="flush">
           <DataListEmpty>No matches.</DataListEmpty>
         </DataList>
         <template v-else>
-          <WorkbenchSection v-for="group in groups" :key="group.key" :title="group.label">
+          <WorkbenchSection v-for="group in visibleGroups" :key="group.key" :title="group.label">
             <DataList variant="flush">
-              <DataListEmpty v-if="!loading && group.items.length === 0">No matches.</DataListEmpty>
               <DataListItem
                 v-for="hit in group.items"
                 :key="hit.id"
                 :title="hit.title"
-                :description="hit.updatedAt"
+                :description="when(hit.updatedAt)"
                 interactive
                 @click="openHit(group.key, hit)"
               />

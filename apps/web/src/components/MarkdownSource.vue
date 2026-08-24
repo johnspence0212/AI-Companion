@@ -22,7 +22,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const preview = ref(false)
+const preview = ref(props.readonly)
 const copiedIndex = ref<number | null>(null)
 
 const segments = computed(() =>

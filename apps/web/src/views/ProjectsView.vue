@@ -18,7 +18,6 @@ import {
   Input,
   MarkdownSource,
   PageBody,
-  PageHeader,
   SavedViewBar,
   StatusMessage,
   WorkbenchPanes,
@@ -79,6 +78,10 @@ const selectedActivityView = computed(
 const visibleIssues = computed(() => applyIssueView(issues.value, selectedIssueView.value))
 
 const issuesByStatus = computed(() => groupsByStatus(visibleIssues.value, ISSUE_STATUSES))
+
+const occupiedIssueGroups = computed(() =>
+  issuesByStatus.value.filter((bucket) => bucket.items.length > 0),
+)
 
 const groupedIssues = computed(() => selectedIssueView.value?.groupBy === 'status')
 
@@ -403,18 +406,11 @@ onMounted(() => {
 
 <template>
   <PageBody variant="workbench">
-    <PageHeader
-      size="compact"
-      title="Projects"
-      description="Issues, Project Context, and recent Sessions."
-    />
-
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
     <WorkbenchPanes
       :system-view="selectedIssueView?.name ?? 'Issues by status'"
-      nav-title="Projects"
       list-title="Issues"
       detail-title="Context"
     >
@@ -463,13 +459,15 @@ onMounted(() => {
           <DataListEmpty>Select a Project to see its Issues.</DataListEmpty>
         </DataList>
         <template v-else-if="groupedIssues">
+          <DataList v-if="occupiedIssueGroups.length === 0" variant="flush">
+            <DataListEmpty>No Issues in this view.</DataListEmpty>
+          </DataList>
           <WorkbenchSection
-            v-for="bucket in issuesByStatus"
+            v-for="bucket in occupiedIssueGroups"
             :key="bucket.status"
             :title="bucket.status"
           >
             <DataList variant="flush">
-              <DataListEmpty v-if="bucket.items.length === 0">None</DataListEmpty>
               <DataListItem
                 v-for="issue in bucket.items"
                 :key="issue.id"
@@ -509,7 +507,7 @@ onMounted(() => {
               <MarkdownSource
                 v-if="context"
                 :model-value="context.body"
-                :label="context.title"
+                label="Source"
                 readonly
               />
             </div>

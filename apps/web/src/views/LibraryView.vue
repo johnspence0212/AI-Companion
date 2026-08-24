@@ -19,7 +19,6 @@ import {
   Input,
   MarkdownSource,
   PageBody,
-  PageHeader,
   SavedViewBar,
   StatusMessage,
   WorkbenchComposer,
@@ -285,12 +284,6 @@ onMounted(() => {
 
 <template>
   <PageBody variant="workbench">
-    <PageHeader
-      size="compact"
-      title="Library"
-      description="Source Markdown is the editor; fenced code is stored exactly."
-    />
-
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 

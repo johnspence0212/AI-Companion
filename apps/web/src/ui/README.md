@@ -106,7 +106,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ### Workbench destination
 
-`PageBody variant="workbench"` → compact `PageHeader` → `WorkbenchPanes` filling the remaining height. Projects and Library are three-pane. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox and Search are a list pane plus `WorkbenchComposer`. `SavedViewBar` is a compact toolbar, not a second list. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
+`PageBody variant="workbench"` → `WorkbenchPanes` filling the remaining height. The shell breadcrumb is the destination name; do not repeat it as a page hero. Projects and Library are three-pane. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox and Search start with `WorkbenchComposer`. `SavedViewBar` is a compact toolbar, not a second list. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 

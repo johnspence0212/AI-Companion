@@ -22,7 +22,14 @@ const showDetail = computed(() => typeof slots.detail === 'function')
 <template>
   <div class="flex min-h-0 flex-1 flex-col overflow-hidden" role="group" aria-label="Workbench">
     <p v-if="systemView" class="sr-only">View: {{ systemView }}</p>
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+    <div
+      :class="
+        cn(
+          'flex min-h-0 flex-1 flex-col lg:flex-row',
+          layout === 'home' ? 'overflow-y-auto lg:overflow-hidden' : 'overflow-hidden',
+        )
+      "
+    >
       <section
         v-if="showNav"
         class="flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-b lg:w-56 lg:border-r lg:border-b-0"
@@ -43,7 +50,7 @@ const showDetail = computed(() => typeof slots.detail === 'function')
         :class="
           cn(
             'flex min-h-0 min-w-0 flex-col overflow-hidden',
-            showDetail && layout === 'home' && 'min-h-64 flex-1',
+            showDetail && layout === 'home' && 'lg:min-h-0 lg:flex-1',
             showDetail &&
               layout !== 'home' &&
               'border-b lg:w-[22rem] lg:shrink-0 lg:border-r lg:border-b-0',
@@ -52,7 +59,10 @@ const showDetail = computed(() => typeof slots.detail === 'function')
         "
         aria-label="List pane"
       >
-        <header class="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
+        <header
+          v-if="listTitle || $slots['list-actions']"
+          class="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3"
+        >
           <h2 class="truncate text-sm font-medium">{{ listTitle }}</h2>
           <div v-if="$slots['list-actions']" class="flex shrink-0 items-center gap-2">
             <slot name="list-actions" />

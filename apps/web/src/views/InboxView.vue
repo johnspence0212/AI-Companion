@@ -14,7 +14,6 @@ import {
   Input,
   MarkdownSource,
   PageBody,
-  PageHeader,
   StatusMessage,
   WorkbenchComposer,
   WorkbenchPanes,
@@ -142,16 +141,10 @@ onMounted(() => {
 
 <template>
   <PageBody variant="workbench">
-    <PageHeader
-      size="compact"
-      title="Inbox"
-      description="Capture first, then process to a Document or Issue."
-    />
-
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
-    <WorkbenchPanes list-title="Inbox">
+    <WorkbenchPanes>
       <template #list-toolbar>
         <WorkbenchComposer
           v-model="draft"
