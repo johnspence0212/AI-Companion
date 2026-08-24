@@ -6,12 +6,12 @@ import {
   DataList,
   DataListEmpty,
   DataListItem,
-  FormField,
-  Input,
   PageBody,
   PageHeader,
   StatusMessage,
-  SurfaceCard,
+  WorkbenchComposer,
+  WorkbenchPanes,
+  WorkbenchSection,
 } from '@/ui'
 
 const date = localDateOnly()
@@ -28,17 +28,6 @@ const heading = computed(() =>
     day: 'numeric',
   }),
 )
-
-const carryoverByDate = computed(() => {
-  const groups = new Map<string, DailyItem[]>()
-  for (const item of daily.value?.carryover ?? []) {
-    const bucket = groups.get(item.date) ?? []
-    bucket.push(item)
-    groups.set(item.date, bucket)
-  }
-
-  return [...groups.entries()]
-})
 
 function label(item: DailyItem) {
   return item.customText ?? item.issueTitle ?? 'Daily Item'
@@ -104,68 +93,70 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageBody>
-    <PageHeader title="Today" :description="heading" />
+  <PageBody variant="workbench">
+    <PageHeader size="compact" title="Today" :description="heading" />
 
-    <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
-    <StatusMessage v-else-if="loading">Loading Daily…</StatusMessage>
+    <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
+    <StatusMessage v-else-if="loading" class="px-4 py-2">Loading Daily…</StatusMessage>
 
-    <SurfaceCard>
-      <h2 class="font-semibold">Daily</h2>
-      <form class="mt-4" @submit.prevent="addItem">
-        <FormField label="Add a custom Daily Item">
-          <Input v-model="draft" name="daily-item" autocomplete="off" />
-        </FormField>
-        <Button class="mt-3" type="submit" :disabled="saving || !draft.trim()">Add</Button>
-      </form>
-      <DataList class="mt-4">
-        <DataListEmpty v-if="!loading && (daily?.items.length ?? 0) === 0">
-          Nothing on Today yet.
-        </DataListEmpty>
-        <DataListItem
-          v-for="item in daily?.items ?? []"
-          :key="item.id"
-          :title="label(item)"
-          :description="item.completedAt ? `${detail(item)} · done` : detail(item)"
-        >
-          <template v-if="!item.completedAt" #actions>
-            <Button size="sm" variant="outline" :disabled="saving" @click="complete(item)">
-              Complete
-            </Button>
-          </template>
-        </DataListItem>
-      </DataList>
-    </SurfaceCard>
-
-    <SurfaceCard>
-      <h2 class="font-semibold">Carryover</h2>
-      <StatusMessage>
-        Incomplete items from the last 7 days stay on their original dates. They are not auto-moved.
-      </StatusMessage>
-      <DataList class="mt-4">
-        <DataListEmpty v-if="!carryoverByDate.length">No carryover.</DataListEmpty>
-        <DataListItem
-          v-for="item in daily?.carryover ?? []"
-          :key="item.id"
-          :title="label(item)"
-          :description="item.date"
+    <WorkbenchPanes layout="home" list-title="Daily" detail-title="Waiting">
+      <template #list-toolbar>
+        <WorkbenchComposer
+          v-model="draft"
+          name="daily-item"
+          placeholder="Add a custom Daily Item"
+          submit-label="Add"
+          :pending="saving"
+          @submit="addItem"
         />
-      </DataList>
-    </SurfaceCard>
-
-    <SurfaceCard>
-      <h2 class="font-semibold">Blocked / Waiting</h2>
-      <DataList>
-        <DataListEmpty v-if="!loading && (daily?.blocked.length ?? 0) === 0">
-          Nothing blocked.
-        </DataListEmpty>
-        <DataListItem
-          v-for="issue in daily?.blocked ?? []"
-          :key="issue.issueId"
-          :title="issue.title"
-          :description="issue.blockedReason ?? issue.status"
-        />
-      </DataList>
-    </SurfaceCard>
+      </template>
+      <template #list>
+        <DataList variant="flush">
+          <DataListEmpty v-if="!loading && (daily?.items.length ?? 0) === 0">
+            Nothing on Today yet.
+          </DataListEmpty>
+          <DataListItem
+            v-for="item in daily?.items ?? []"
+            :key="item.id"
+            :title="label(item)"
+            :description="item.completedAt ? `${detail(item)} · done` : detail(item)"
+          >
+            <template v-if="!item.completedAt" #actions>
+              <Button size="sm" variant="outline" :disabled="saving" @click="complete(item)">
+                Complete
+              </Button>
+            </template>
+          </DataListItem>
+        </DataList>
+      </template>
+      <template #detail>
+        <WorkbenchSection title="Carryover">
+          <DataList variant="flush">
+            <DataListEmpty v-if="!daily?.carryover.length">
+              Incomplete items from the last 7 days stay on their original dates.
+            </DataListEmpty>
+            <DataListItem
+              v-for="item in daily?.carryover ?? []"
+              :key="item.id"
+              :title="label(item)"
+              :description="item.date"
+            />
+          </DataList>
+        </WorkbenchSection>
+        <WorkbenchSection title="Blocked / Waiting">
+          <DataList variant="flush">
+            <DataListEmpty v-if="!loading && (daily?.blocked.length ?? 0) === 0">
+              Nothing blocked.
+            </DataListEmpty>
+            <DataListItem
+              v-for="issue in daily?.blocked ?? []"
+              :key="issue.issueId"
+              :title="issue.title"
+              :description="issue.blockedReason ?? issue.status"
+            />
+          </DataList>
+        </WorkbenchSection>
+      </template>
+    </WorkbenchPanes>
   </PageBody>
 </template>

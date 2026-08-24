@@ -16,7 +16,8 @@ import {
   PageBody,
   PageHeader,
   StatusMessage,
-  SurfaceCard,
+  WorkbenchComposer,
+  WorkbenchPanes,
 } from '@/ui'
 
 const items = ref<InboxItem[]>([])
@@ -140,37 +141,42 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageBody>
+  <PageBody variant="workbench">
     <PageHeader
+      size="compact"
       title="Inbox"
-      description="Capture unclassified thoughts, then process them to a Document or Issue."
+      description="Capture first, then process to a Document or Issue."
     />
 
-    <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
-    <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
+    <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
+    <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
-    <SurfaceCard>
-      <form @submit.prevent="capture">
-        <FormField label="Capture">
-          <Input v-model="draft" name="inbox-capture" autocomplete="off" />
-        </FormField>
-        <Button class="mt-3" type="submit" shape="square" :disabled="saving || !draft.trim()">
-          Capture
-        </Button>
-      </form>
-      <DataList class="mt-4">
-        <DataListEmpty v-if="!loading && items.length === 0">Inbox is empty.</DataListEmpty>
-        <DataListItem
-          v-for="item in items"
-          :key="item.id"
-          :title="item.text.split('\n')[0] || 'Inbox Item'"
-          :description="item.status"
-          interactive
-          :selected="selected?.id === item.id"
-          @click="open(item)"
+    <WorkbenchPanes list-title="Inbox">
+      <template #list-toolbar>
+        <WorkbenchComposer
+          v-model="draft"
+          name="inbox-capture"
+          placeholder="Capture a thought"
+          submit-label="Capture"
+          :pending="saving"
+          @submit="capture"
         />
-      </DataList>
-    </SurfaceCard>
+      </template>
+      <template #list>
+        <DataList variant="flush">
+          <DataListEmpty v-if="!loading && items.length === 0">Inbox is empty.</DataListEmpty>
+          <DataListItem
+            v-for="item in items"
+            :key="item.id"
+            :title="item.text.split('\n')[0] || 'Inbox Item'"
+            :description="item.status"
+            interactive
+            :selected="selected?.id === item.id"
+            @click="open(item)"
+          />
+        </DataList>
+      </template>
+    </WorkbenchPanes>
 
     <FormSlideout
       :open="slideoutOpen"

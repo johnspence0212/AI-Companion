@@ -5,19 +5,18 @@ import { issuesApi, type Issue } from '@/api/issuesApi'
 import { projectsApi, type ProjectContext } from '@/api/projectsApi'
 import { searchApi, type SearchHit, type SearchResults } from '@/api/searchApi'
 import {
-  Button,
   DataList,
   DataListEmpty,
   DataListItem,
-  FormField,
   FormSection,
   FormSlideout,
-  Input,
   MarkdownSource,
   PageBody,
   PageHeader,
   StatusMessage,
-  SurfaceCard,
+  WorkbenchComposer,
+  WorkbenchPanes,
+  WorkbenchSection,
 } from '@/ui'
 
 const query = ref('')
@@ -37,6 +36,8 @@ const groups = computed(() => [
   { key: 'issues', label: 'Issues', items: results.value?.issues ?? [] },
   { key: 'activity', label: 'Activity', items: results.value?.activity ?? [] },
 ])
+
+const hasResults = computed(() => groups.value.some((group) => group.items.length > 0))
 
 function resetOpened() {
   openedDocument.value = null
@@ -105,39 +106,50 @@ function markdown() {
 </script>
 
 <template>
-  <PageBody>
+  <PageBody variant="workbench">
     <PageHeader
+      size="compact"
       title="Search"
-      description="Grouped full-text over Projects, Documents, Issues, and Activity."
+      description="Projects, Documents, Issues, and Activity."
     />
 
-    <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
+    <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
 
-    <SurfaceCard>
-      <form @submit.prevent="runSearch">
-        <FormField label="Query">
-          <Input v-model="query" name="search" autocomplete="off" />
-        </FormField>
-        <Button class="mt-3" type="submit" shape="square" :disabled="loading || !query.trim()">
-          Search
-        </Button>
-      </form>
-    </SurfaceCard>
-
-    <SurfaceCard v-for="group in groups" :key="group.key">
-      <h2 class="font-semibold">{{ group.label }}</h2>
-      <DataList class="mt-4">
-        <DataListEmpty v-if="!loading && group.items.length === 0">No matches.</DataListEmpty>
-        <DataListItem
-          v-for="hit in group.items"
-          :key="hit.id"
-          :title="hit.title"
-          :description="hit.updatedAt"
-          interactive
-          @click="openHit(group.key, hit)"
+    <WorkbenchPanes list-title="Results">
+      <template #list-toolbar>
+        <WorkbenchComposer
+          v-model="query"
+          name="search"
+          placeholder="Search"
+          submit-label="Search"
+          :pending="loading"
+          @submit="runSearch"
         />
-      </DataList>
-    </SurfaceCard>
+      </template>
+      <template #list>
+        <DataList v-if="!results && !loading" variant="flush">
+          <DataListEmpty>Type a query to search the library and Projects.</DataListEmpty>
+        </DataList>
+        <DataList v-else-if="results && !hasResults" variant="flush">
+          <DataListEmpty>No matches.</DataListEmpty>
+        </DataList>
+        <template v-else>
+          <WorkbenchSection v-for="group in groups" :key="group.key" :title="group.label">
+            <DataList variant="flush">
+              <DataListEmpty v-if="!loading && group.items.length === 0">No matches.</DataListEmpty>
+              <DataListItem
+                v-for="hit in group.items"
+                :key="hit.id"
+                :title="hit.title"
+                :description="hit.updatedAt"
+                interactive
+                @click="openHit(group.key, hit)"
+              />
+            </DataList>
+          </WorkbenchSection>
+        </template>
+      </template>
+    </WorkbenchPanes>
 
     <FormSlideout
       :open="slideoutOpen"

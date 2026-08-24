@@ -22,6 +22,7 @@ import {
   SavedViewBar,
   StatusMessage,
   WorkbenchPanes,
+  WorkbenchSection,
 } from '@/ui'
 
 const route = useRoute()
@@ -401,15 +402,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageBody>
-    <PageHeader title="Projects" description="Issues, Project Context, and recent Sessions.">
-      <template #actions>
-        <Button shape="square" @click="openCreateProject">New project</Button>
-      </template>
-    </PageHeader>
+  <PageBody variant="workbench">
+    <PageHeader
+      size="compact"
+      title="Projects"
+      description="Issues, Project Context, and recent Sessions."
+    />
 
-    <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
-    <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
+    <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
+    <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
     <WorkbenchPanes
       :system-view="selectedIssueView?.name ?? 'Issues by status'"
@@ -417,8 +418,11 @@ onMounted(() => {
       list-title="Issues"
       detail-title="Context"
     >
+      <template #nav-actions>
+        <Button size="sm" shape="square" @click="openCreateProject">New</Button>
+      </template>
       <template #nav>
-        <DataList>
+        <DataList variant="flush">
           <DataListEmpty v-if="!loading && projects.length === 0">No Projects yet.</DataListEmpty>
           <DataListItem
             v-for="project in projects"
@@ -432,31 +436,39 @@ onMounted(() => {
         </DataList>
       </template>
 
-      <template #list>
-        <SavedViewBar
-          class="mb-4"
-          :views="issueViews"
-          :selected-id="selectedIssueViewId"
-          :pending="saving"
-          @select="selectedIssueViewId = $event"
-          @duplicate="duplicateIssueView"
-          @edit="openIssueFilters"
-        />
+      <template #list-actions>
         <Button
           v-if="selected"
-          class="mb-4"
           size="sm"
           shape="square"
           :disabled="saving"
           @click="openCreateIssue"
         >
-          New issue
+          New
         </Button>
-        <StatusMessage v-if="!selected">Select a Project to see its Issues.</StatusMessage>
-        <template v-if="groupedIssues">
-          <template v-for="bucket in issuesByStatus" :key="bucket.status">
-            <h3 class="mt-4 mb-2 text-sm font-semibold">{{ bucket.status }}</h3>
-            <DataList>
+      </template>
+      <template #list-toolbar>
+        <SavedViewBar
+          :views="issueViews"
+          :selected-id="selectedIssueViewId"
+          input-id="issue-saved-view"
+          :pending="saving"
+          @select="selectedIssueViewId = $event"
+          @duplicate="duplicateIssueView"
+          @edit="openIssueFilters"
+        />
+      </template>
+      <template #list>
+        <DataList v-if="!selected" variant="flush">
+          <DataListEmpty>Select a Project to see its Issues.</DataListEmpty>
+        </DataList>
+        <template v-else-if="groupedIssues">
+          <WorkbenchSection
+            v-for="bucket in issuesByStatus"
+            :key="bucket.status"
+            :title="bucket.status"
+          >
+            <DataList variant="flush">
               <DataListEmpty v-if="bucket.items.length === 0">None</DataListEmpty>
               <DataListItem
                 v-for="issue in bucket.items"
@@ -468,9 +480,9 @@ onMounted(() => {
                 @click="openIssue(issue)"
               />
             </DataList>
-          </template>
+          </WorkbenchSection>
         </template>
-        <DataList v-else>
+        <DataList v-else variant="flush">
           <DataListEmpty v-if="!visibleIssues.length">No Issues in this view.</DataListEmpty>
           <DataListItem
             v-for="issue in visibleIssues"
@@ -484,49 +496,57 @@ onMounted(() => {
         </DataList>
       </template>
 
+      <template #detail-actions>
+        <Button v-if="selected" size="sm" shape="square" @click="openContext">Edit</Button>
+      </template>
       <template #detail>
-        <StatusMessage v-if="!selected"
-          >Select a Project to read Context and Sessions.</StatusMessage
-        >
+        <DataList v-if="!selected" variant="flush">
+          <DataListEmpty>Select a Project to read Context and Sessions.</DataListEmpty>
+        </DataList>
         <template v-else>
-          <Button class="mb-4" size="sm" shape="square" @click="openContext">Edit context</Button>
-          <MarkdownSource
-            v-if="context"
-            :model-value="context.body"
-            :label="context.title"
-            readonly
-          />
-          <h3 class="mt-6 mb-2 font-semibold">Recent Sessions</h3>
-          <DataList>
-            <DataListEmpty v-if="recentSessions.length === 0">No Sessions yet.</DataListEmpty>
-            <DataListItem
-              v-for="session in recentSessions"
-              :key="session.id"
-              :title="session.summary ?? 'Session'"
-              :description="`${actorLabel(session)} · ${sessionWhen(session)}`"
+          <WorkbenchSection :title="context?.title ?? 'Project Context'">
+            <div class="p-3">
+              <MarkdownSource
+                v-if="context"
+                :model-value="context.body"
+                :label="context.title"
+                readonly
+              />
+            </div>
+          </WorkbenchSection>
+          <WorkbenchSection title="Recent Sessions">
+            <DataList variant="flush">
+              <DataListEmpty v-if="recentSessions.length === 0">No Sessions yet.</DataListEmpty>
+              <DataListItem
+                v-for="session in recentSessions"
+                :key="session.id"
+                :title="session.summary ?? 'Session'"
+                :description="`${actorLabel(session)} · ${sessionWhen(session)}`"
+              />
+            </DataList>
+          </WorkbenchSection>
+          <WorkbenchSection title="Activity">
+            <SavedViewBar
+              :views="activityViews"
+              :selected-id="selectedActivityViewId"
+              input-id="activity-saved-view"
+              :pending="saving"
+              @select="selectedActivityViewId = $event"
+              @duplicate="duplicateActivityView"
+              @edit="openActivityFilters"
             />
-          </DataList>
-          <h3 class="mt-6 mb-2 font-semibold">Activity</h3>
-          <SavedViewBar
-            class="mb-4"
-            :views="activityViews"
-            :selected-id="selectedActivityViewId"
-            :pending="saving"
-            @select="selectedActivityViewId = $event"
-            @duplicate="duplicateActivityView"
-            @edit="openActivityFilters"
-          />
-          <DataList>
-            <DataListEmpty v-if="visibleActivity.length === 0"
-              >No Activity in this view.</DataListEmpty
-            >
-            <DataListItem
-              v-for="item in visibleActivity"
-              :key="item.id"
-              :title="item.summary"
-              :description="`${item.recordType} · ${item.occurredAt}`"
-            />
-          </DataList>
+            <DataList variant="flush">
+              <DataListEmpty v-if="visibleActivity.length === 0"
+                >No Activity in this view.</DataListEmpty
+              >
+              <DataListItem
+                v-for="item in visibleActivity"
+                :key="item.id"
+                :title="item.summary"
+                :description="`${item.recordType} · ${item.occurredAt}`"
+              />
+            </DataList>
+          </WorkbenchSection>
         </template>
       </template>
     </WorkbenchPanes>

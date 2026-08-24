@@ -40,3 +40,15 @@ export const Empty: Story = {
     `,
   }),
 }
+
+export const Flush: Story = {
+  render: () => ({
+    components: { DataList, DataListItem },
+    template: `
+      <DataList variant="flush">
+        <DataListItem title="All" selected interactive />
+        <DataListItem title="Unfiled" interactive />
+      </DataList>
+    `,
+  }),
+}

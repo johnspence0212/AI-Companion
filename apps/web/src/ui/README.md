@@ -71,7 +71,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 | Component                                             | Role                                              |
 | ----------------------------------------------------- | ------------------------------------------------- |
-| `PageBody`                                            | Page padding / vertical rhythm                    |
+| `PageBody`                                            | `page` padding or `workbench` fill layout         |
 | `PageHeader`                                          | Eyebrow, title, description, top-right actions    |
 | `StatusMessage`                                       | Error / muted / success text                      |
 | `FormPanel`                                           | Auth/profile card form shell                      |
@@ -79,7 +79,9 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 | `MultiSelect`                                         | Multi-value selector for forms                    |
 | `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                                 |
 | `DataTable`                                           | Dense bordered tables                             |
-| `WorkbenchPanes`                                      | Three-pane workbench (stacks on small screens)    |
+| `WorkbenchPanes`                                      | Connected panes (nav / list / detail), not cards  |
+| `WorkbenchComposer`                                   | Compact capture/add/search bar inside a pane      |
+| `WorkbenchSection`                                    | Named group inside a pane (Carryover, results)    |
 | `MarkdownSource`                                      | Source Markdown editor with preview/copy          |
 | `SavedViewBar`                                        | System/user Saved View picker inside destinations |
 | `SurfaceCard`                                         | Simple linked/static surface cards                |
@@ -104,7 +106,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ### Workbench destination
 
-`PageBody` → `PageHeader` → `WorkbenchPanes` (nav / list / detail) with `SavedViewBar` as the list mode. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
+`PageBody variant="workbench"` → compact `PageHeader` → `WorkbenchPanes` filling the remaining height. Projects and Library are three-pane. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox and Search are a list pane plus `WorkbenchComposer`. `SavedViewBar` is a compact toolbar, not a second list. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 

@@ -22,6 +22,7 @@ import {
   PageHeader,
   SavedViewBar,
   StatusMessage,
+  WorkbenchComposer,
   WorkbenchPanes,
 } from '@/ui'
 
@@ -283,18 +284,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageBody>
+  <PageBody variant="workbench">
     <PageHeader
+      size="compact"
       title="Library"
-      description="Independent Documents. Source Markdown is the editor; fenced code is stored exactly."
-    >
-      <template #actions>
-        <Button shape="square" @click="openCreate">New document</Button>
-      </template>
-    </PageHeader>
+      description="Source Markdown is the editor; fenced code is stored exactly."
+    />
 
-    <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
-    <StatusMessage v-else-if="notice" tone="success">{{ notice }}</StatusMessage>
+    <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
+    <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
     <WorkbenchPanes
       :system-view="selectedView?.name ?? 'All Documents'"
@@ -303,21 +301,15 @@ onMounted(() => {
       detail-title="Source"
     >
       <template #nav>
-        <form @submit.prevent="addFolder">
-          <FormField label="New folder">
-            <Input v-model="folderDraft" name="folder" autocomplete="off" />
-          </FormField>
-          <Button
-            class="mt-3"
-            type="submit"
-            size="sm"
-            shape="square"
-            :disabled="saving || !folderDraft.trim()"
-          >
-            Add folder
-          </Button>
-        </form>
-        <DataList class="mt-4">
+        <WorkbenchComposer
+          v-model="folderDraft"
+          name="folder"
+          placeholder="New folder"
+          submit-label="Add"
+          :pending="saving"
+          @submit="addFolder"
+        />
+        <DataList variant="flush">
           <DataListItem
             title="All"
             interactive
@@ -341,9 +333,11 @@ onMounted(() => {
         </DataList>
       </template>
 
-      <template #list>
+      <template #list-actions>
+        <Button size="sm" shape="square" @click="openCreate">New</Button>
+      </template>
+      <template #list-toolbar>
         <SavedViewBar
-          class="mb-4"
           :views="views"
           :selected-id="selectedViewId"
           :pending="saving"
@@ -351,7 +345,9 @@ onMounted(() => {
           @duplicate="duplicateView"
           @edit="openFilterEditor"
         />
-        <DataList>
+      </template>
+      <template #list>
+        <DataList variant="flush">
           <DataListEmpty v-if="!loading && visibleDocuments.length === 0">
             No documents in this folder.
           </DataListEmpty>
@@ -363,21 +359,20 @@ onMounted(() => {
             interactive
             :selected="selectedId === document.id"
             @click="selectDocument(document)"
-          >
-            <template #actions>
-              <Button size="sm" variant="outline" shape="square" @click.stop="openEdit(document)">
-                Edit
-              </Button>
-            </template>
-          </DataListItem>
+          />
         </DataList>
       </template>
 
+      <template #detail-actions>
+        <Button v-if="selected" size="sm" shape="square" @click="openEdit(selected)">Edit</Button>
+      </template>
       <template #detail>
-        <StatusMessage v-if="!selected"
-          >Select a Document to read its source Markdown.</StatusMessage
-        >
-        <MarkdownSource v-else :model-value="selected.body" :label="selected.title" readonly />
+        <DataList v-if="!selected" variant="flush">
+          <DataListEmpty>Select a Document to read its source Markdown.</DataListEmpty>
+        </DataList>
+        <div v-else class="p-3">
+          <MarkdownSource :model-value="selected.body" :label="selected.title" readonly />
+        </div>
       </template>
     </WorkbenchPanes>
 

@@ -1,12 +1,30 @@
 <script setup lang="ts">
-/**
- * Standard authenticated page scaffolding.
- * Views compose this instead of inventing page padding/spacing.
- */
+import { cn } from '@/lib/utils'
+
+withDefaults(
+  defineProps<{
+    /**
+     * `page` keeps padded admin screens. `workbench` fills the shell so panes can
+     * scroll internally instead of stacking cards in a document flow.
+     */
+    variant?: 'page' | 'workbench'
+  }>(),
+  {
+    variant: 'page',
+  },
+)
 </script>
 
 <template>
-  <div class="space-y-6 p-8">
+  <div
+    :class="
+      cn(
+        variant === 'workbench'
+          ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+          : 'min-h-0 flex-1 space-y-6 overflow-y-auto p-8',
+      )
+    "
+  >
     <slot />
   </div>
 </template>

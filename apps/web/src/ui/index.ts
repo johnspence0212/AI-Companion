@@ -64,6 +64,8 @@ export {
   DataListEmpty,
   DataTable,
   WorkbenchPanes,
+  WorkbenchComposer,
+  WorkbenchSection,
   MarkdownSource,
   SavedViewBar,
 } from './chrome'

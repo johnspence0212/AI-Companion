@@ -21,3 +21,17 @@ export const Default: Story = {
     `,
   }),
 }
+
+export const Workbench: Story = {
+  render: () => ({
+    components: { PageBody, PageHeader },
+    template: `
+      <PageBody variant="workbench">
+        <PageHeader size="compact" title="Today" description="Monday, August 24" />
+        <p class="px-4 py-3 text-sm text-muted-foreground">
+          Workbench fills the shell so panes scroll instead of stacking cards.
+        </p>
+      </PageBody>
+    `,
+  }),
+}

@@ -36,3 +36,23 @@ export const WithActions: Story = {
     `,
   }),
 }
+
+export const Compact: Story = {
+  args: {
+    title: 'Today',
+    description: 'Monday, August 24',
+    eyebrow: undefined,
+    size: 'compact',
+  },
+  render: (args) => ({
+    components: { Button, PageHeader },
+    setup: () => ({ args }),
+    template: `
+      <PageHeader v-bind="args">
+        <template #actions>
+          <Button size="sm" shape="square">New</Button>
+        </template>
+      </PageHeader>
+    `,
+  }),
+}
