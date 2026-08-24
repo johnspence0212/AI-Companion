@@ -8,6 +8,7 @@ export interface LibraryDocument {
   body: string
   revisionId: string
   folderId: string | null
+  parentDocumentId: string | null
   projectIds: string[]
   tags: string[]
   updatedAt: string
@@ -47,6 +48,7 @@ function parseDocument(data: unknown): LibraryDocument {
     body: data.body,
     revisionId: data.revisionId,
     folderId: typeof data.folderId === 'string' ? data.folderId : null,
+    parentDocumentId: typeof data.parentDocumentId === 'string' ? data.parentDocumentId : null,
     projectIds: stringArray(data.projectIds),
     tags: stringArray(data.tags),
     updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : '',
@@ -88,8 +90,20 @@ export const documentsApi = {
   },
   get: async (id: string): Promise<LibraryDocument> =>
     parseDocument(await httpClient.get(`/documents/${id}`)),
-  create: async (title: string, body: string, folderId?: string | null): Promise<LibraryDocument> =>
-    parseDocument(await httpClient.post('/documents', { title, body, folderId })),
+  create: async (input: {
+    title: string
+    body?: string
+    folderId?: string | null
+    parentDocumentId?: string | null
+  }): Promise<LibraryDocument> =>
+    parseDocument(
+      await httpClient.post('/documents', {
+        title: input.title,
+        body: input.body ?? '',
+        folderId: input.folderId,
+        parentDocumentId: input.parentDocumentId,
+      }),
+    ),
   listFolders: async (): Promise<LibraryFolder[]> => {
     const data = await httpClient.get<unknown>('/folders')
     return Array.isArray(data) ? data.map(parseFolder) : []

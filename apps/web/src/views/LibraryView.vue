@@ -1,46 +1,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import {
-  documentsApi,
-  type DocumentRevision,
-  type LibraryDocument,
-  type LibraryFolder,
-} from '@/api/documentsApi'
-import { viewsApi, type SavedView } from '@/api/viewsApi'
-import { applyDocumentView } from '@/lib/savedViews'
+import { documentsApi, type DocumentRevision, type LibraryDocument } from '@/api/documentsApi'
+import { ancestorNoteIds, buildNotesTree } from '@/lib/notesTree'
 import {
   Button,
   DataList,
   DataListEmpty,
   DataListItem,
   FormField,
-  FormSection,
-  FormSlideout,
   Input,
   MarkdownSource,
+  NotesTree,
   PageBody,
-  SavedViewBar,
   StatusMessage,
-  WorkbenchComposer,
   WorkbenchPanes,
+  WorkbenchSection,
 } from '@/ui'
 
 const documents = ref<LibraryDocument[]>([])
-const folders = ref<LibraryFolder[]>([])
-const views = ref<SavedView[]>([])
 const revisions = ref<DocumentRevision[]>([])
-const selectedFolderId = ref<string | 'all' | 'unfiled'>('all')
-const selectedViewId = ref<string | null>(null)
 const selectedId = ref<string | null>(null)
-const slideoutOpen = ref(false)
-const filterSlideoutOpen = ref(false)
-const filterName = ref('')
-const filterFolder = ref('all')
-const editingId = ref<string | null>(null)
-const title = ref('')
-const body = ref('')
-const revisionId = ref('')
-const folderDraft = ref('')
+const expandedIds = ref<string[]>([])
+const draftTitle = ref('')
+const draftBody = ref('')
+const draftRevisionId = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
@@ -50,227 +33,147 @@ const selected = computed(
   () => documents.value.find((document) => document.id === selectedId.value) ?? null,
 )
 
-const selectedView = computed(
-  () => views.value.find((view) => view.id === selectedViewId.value) ?? null,
-)
+const tree = computed(() => buildNotesTree(documents.value))
 
-const visibleDocuments = computed(() => {
-  const fromView = applyDocumentView(documents.value, selectedView.value)
-  if (selectedFolderId.value === 'all') {
-    return fromView
+const isDirty = computed(() => {
+  if (!selected.value) {
+    return false
   }
 
-  if (selectedFolderId.value === 'unfiled') {
-    return fromView.filter((document) => document.folderId === null)
-  }
-
-  return fromView.filter((document) => document.folderId === selectedFolderId.value)
+  return draftTitle.value !== selected.value.title || draftBody.value !== selected.value.body
 })
 
-const folderLabels = computed(() => {
-  const byId = new Map(folders.value.map((folder) => [folder.id, folder]))
-  return folders.value
-    .slice()
-    .sort((left, right) => left.rank - right.rank || left.name.localeCompare(right.name))
-    .map((folder) => {
-      const parts = [folder.name]
-      let parentId = folder.parentFolderId
-      while (parentId) {
-        const parent = byId.get(parentId)
-        if (!parent) {
-          break
-        }
-        parts.unshift(parent.name)
-        parentId = parent.parentFolderId
-      }
+function expandAncestors(id: string) {
+  expandedIds.value = [...new Set([...expandedIds.value, ...ancestorNoteIds(documents.value, id)])]
+}
 
-      return { ...folder, path: parts.join(' / ') }
-    })
-})
-
-function folderName(id: string | null) {
-  if (!id) {
-    return 'Unfiled'
-  }
-
-  return folderLabels.value.find((folder) => folder.id === id)?.path ?? 'Folder'
+function applyDraft(document: LibraryDocument) {
+  selectedId.value = document.id
+  draftTitle.value = document.title
+  draftBody.value = document.body
+  draftRevisionId.value = document.revisionId
+  expandAncestors(document.id)
 }
 
 async function loadLibrary() {
   loading.value = true
   error.value = null
   try {
-    const [documentItems, folderItems, viewItems] = await Promise.all([
-      documentsApi.list(),
-      documentsApi.listFolders(),
-      viewsApi.list('Documents'),
-    ])
+    const documentItems = await documentsApi.list()
     documents.value = documentItems
-    folders.value = folderItems
-    views.value = viewItems
-    if (!selectedViewId.value || !viewItems.some((view) => view.id === selectedViewId.value)) {
-      selectedViewId.value = viewItems[0]?.id ?? null
-    }
     if (selectedId.value && !documentItems.some((document) => document.id === selectedId.value)) {
       selectedId.value = null
       revisions.value = []
+      draftTitle.value = ''
+      draftBody.value = ''
+      draftRevisionId.value = ''
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load the library'
+    error.value = e instanceof Error ? e.message : 'Failed to load notes'
     throw e
   } finally {
     loading.value = false
   }
 }
 
-async function selectDocument(document: LibraryDocument) {
-  selectedId.value = document.id
+async function selectNote(document: LibraryDocument) {
+  if (selected.value && isDirty.value && selected.value.id !== document.id) {
+    await saveCurrent()
+  }
+
   notice.value = null
+  applyDraft(document)
   revisions.value = await documentsApi.revisions(document.id)
 }
 
-function openCreate() {
-  editingId.value = null
-  title.value = ''
-  body.value = ''
-  revisionId.value = ''
-  revisions.value = []
-  slideoutOpen.value = true
+async function selectNoteById(id: string) {
+  const document = documents.value.find((item) => item.id === id)
+  if (document) {
+    await selectNote(document)
+  }
 }
 
-function openEdit(document: LibraryDocument) {
-  editingId.value = document.id
-  title.value = document.title
-  body.value = document.body
-  revisionId.value = document.revisionId
-  slideoutOpen.value = true
-  void selectDocument(document)
+async function saveCurrent() {
+  if (!selected.value) {
+    return null
+  }
+
+  const title = draftTitle.value.trim() || 'Untitled'
+  saving.value = true
+  error.value = null
+  try {
+    const saved = await documentsApi.save(
+      selected.value.id,
+      draftRevisionId.value,
+      title,
+      draftBody.value,
+    )
+    await loadLibrary()
+    applyDraft(saved)
+    revisions.value = await documentsApi.revisions(saved.id)
+    notice.value = 'Saved.'
+    return saved
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to save note'
+    throw e
+  } finally {
+    saving.value = false
+  }
 }
 
-function setSlideoutOpen(open: boolean) {
-  slideoutOpen.value = open
-}
-
-async function save() {
-  if (!title.value.trim()) {
-    error.value = 'Title is required.'
-    return
+async function addNote(parentId?: string) {
+  if (selected.value && isDirty.value) {
+    await saveCurrent()
   }
 
   saving.value = true
   error.value = null
   notice.value = null
   try {
-    const folderId =
-      selectedFolderId.value === 'all' || selectedFolderId.value === 'unfiled'
-        ? null
-        : selectedFolderId.value
-    const saved = editingId.value
-      ? await documentsApi.save(editingId.value, revisionId.value, title.value, body.value)
-      : await documentsApi.create(title.value, body.value, folderId)
+    if (parentId) {
+      expandedIds.value = [...new Set([...expandedIds.value, parentId])]
+    }
+
+    const created = await documentsApi.create({
+      title: 'Untitled',
+      body: '',
+      parentDocumentId: parentId ?? null,
+    })
     await loadLibrary()
-    await selectDocument(saved)
-    slideoutOpen.value = false
-    notice.value = 'Saved.'
+    await selectNote(created)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to save document'
+    error.value = e instanceof Error ? e.message : 'Failed to create note'
     throw e
   } finally {
     saving.value = false
   }
+}
+
+function toggleExpanded(id: string) {
+  expandedIds.value = expandedIds.value.includes(id)
+    ? expandedIds.value.filter((item) => item !== id)
+    : [...expandedIds.value, id]
 }
 
 async function restore(revision: DocumentRevision) {
-  if (!editingId.value) {
+  if (!selected.value) {
     return
   }
 
   saving.value = true
   error.value = null
   try {
-    const restored = await documentsApi.restore(editingId.value, revisionId.value, revision.id)
+    const restored = await documentsApi.restore(
+      selected.value.id,
+      draftRevisionId.value,
+      revision.id,
+    )
     await loadLibrary()
-    await selectDocument(restored)
-    title.value = restored.title
-    body.value = restored.body
-    revisionId.value = restored.revisionId
+    applyDraft(restored)
+    revisions.value = await documentsApi.revisions(restored.id)
     notice.value = 'Restored a new current revision.'
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to restore revision'
-    throw e
-  } finally {
-    saving.value = false
-  }
-}
-
-async function addFolder() {
-  if (!folderDraft.value.trim()) {
-    return
-  }
-
-  saving.value = true
-  error.value = null
-  try {
-    const created = await documentsApi.createFolder(folderDraft.value.trim())
-    folderDraft.value = ''
-    await loadLibrary()
-    selectedFolderId.value = created.id
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to create folder'
-    throw e
-  } finally {
-    saving.value = false
-  }
-}
-
-async function duplicateView() {
-  if (!selectedViewId.value) {
-    return
-  }
-
-  saving.value = true
-  error.value = null
-  try {
-    const copy = await viewsApi.duplicate(selectedViewId.value)
-    views.value = await viewsApi.list('Documents')
-    selectedViewId.value = copy.id
-    notice.value = 'Duplicated Saved View. Edit filters on the copy.'
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to duplicate Saved View'
-    throw e
-  } finally {
-    saving.value = false
-  }
-}
-
-function openFilterEditor() {
-  if (!selectedView.value || selectedView.value.isSystem) {
-    return
-  }
-
-  filterName.value = selectedView.value.name
-  filterFolder.value = selectedView.value.filters.folder ?? 'all'
-  filterSlideoutOpen.value = true
-}
-
-async function saveFilters() {
-  if (!selectedView.value || selectedView.value.isSystem) {
-    return
-  }
-
-  saving.value = true
-  error.value = null
-  try {
-    const updated = await viewsApi.update(selectedView.value.id, {
-      name: filterName.value,
-      filters: filterFolder.value === 'all' ? {} : { folder: filterFolder.value },
-    })
-    views.value = await viewsApi.list('Documents')
-    selectedViewId.value = updated.id
-    filterSlideoutOpen.value = false
-    notice.value = 'Saved View filters updated.'
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to update Saved View'
     throw e
   } finally {
     saving.value = false
@@ -287,152 +190,70 @@ onMounted(() => {
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
-    <WorkbenchPanes
-      :system-view="selectedView?.name ?? 'All Documents'"
-      nav-title="Folders"
-      list-title="Documents"
-      detail-title="Source"
-    >
-      <template #nav>
-        <WorkbenchComposer
-          v-model="folderDraft"
-          name="folder"
-          placeholder="New folder"
-          submit-label="Add"
-          :pending="saving"
-          @submit="addFolder"
-        />
-        <DataList variant="flush">
-          <DataListItem
-            title="All"
-            interactive
-            :selected="selectedFolderId === 'all'"
-            @click="selectedFolderId = 'all'"
-          />
-          <DataListItem
-            title="Unfiled"
-            interactive
-            :selected="selectedFolderId === 'unfiled'"
-            @click="selectedFolderId = 'unfiled'"
-          />
-          <DataListItem
-            v-for="folder in folderLabels"
-            :key="folder.id"
-            :title="folder.path"
-            interactive
-            :selected="selectedFolderId === folder.id"
-            @click="selectedFolderId = folder.id"
-          />
-        </DataList>
-      </template>
-
+    <WorkbenchPanes list-title="Notes" :detail-title="selected?.title ?? 'Note'">
       <template #list-actions>
-        <Button size="sm" shape="square" @click="openCreate">New</Button>
-      </template>
-      <template #list-toolbar>
-        <SavedViewBar
-          :views="views"
-          :selected-id="selectedViewId"
-          :pending="saving"
-          @select="selectedViewId = $event"
-          @duplicate="duplicateView"
-          @edit="openFilterEditor"
-        />
+        <Button size="sm" shape="square" :disabled="saving" @click="addNote()">New note</Button>
       </template>
       <template #list>
-        <DataList variant="flush">
-          <DataListEmpty v-if="!loading && visibleDocuments.length === 0">
-            No documents in this folder.
-          </DataListEmpty>
-          <DataListItem
-            v-for="document in visibleDocuments"
-            :key="document.id"
-            :title="document.title"
-            :description="folderName(document.folderId)"
-            interactive
-            :selected="selectedId === document.id"
-            @click="selectDocument(document)"
-          />
+        <DataList v-if="!loading && tree.length === 0" variant="flush">
+          <DataListEmpty>No notes yet. Create one to start writing.</DataListEmpty>
         </DataList>
+        <NotesTree
+          v-else
+          :items="tree"
+          :selected-id="selectedId"
+          :expanded-ids="expandedIds"
+          :pending="saving"
+          @select="selectNoteById"
+          @add-child="addNote"
+          @toggle="toggleExpanded"
+        />
       </template>
 
       <template #detail-actions>
-        <Button v-if="selected" size="sm" shape="square" @click="openEdit(selected)">Edit</Button>
+        <Button
+          v-if="selected"
+          size="sm"
+          shape="square"
+          :disabled="saving || !isDirty"
+          @click="saveCurrent"
+        >
+          Save
+        </Button>
       </template>
       <template #detail>
         <DataList v-if="!selected" variant="flush">
-          <DataListEmpty>Select a Document to read its source Markdown.</DataListEmpty>
+          <DataListEmpty>Select a note or create one.</DataListEmpty>
         </DataList>
-        <div v-else class="p-3">
-          <MarkdownSource :model-value="selected.body" :label="selected.title" readonly />
+        <div v-else class="space-y-3 p-3">
+          <FormField label="Title" required>
+            <Input v-model="draftTitle" name="title" autocomplete="off" />
+          </FormField>
+          <MarkdownSource v-model="draftBody" label="Note" />
+          <WorkbenchSection v-if="revisions.length" title="History">
+            <DataList variant="flush">
+              <DataListItem
+                v-for="revision in revisions"
+                :key="revision.id"
+                :title="revision.kind"
+                :description="revision.createdAt"
+              >
+                <template v-if="revision.id !== draftRevisionId" #actions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    shape="square"
+                    :disabled="saving"
+                    @click="restore(revision)"
+                  >
+                    Restore
+                  </Button>
+                </template>
+              </DataListItem>
+            </DataList>
+          </WorkbenchSection>
         </div>
       </template>
     </WorkbenchPanes>
-
-    <FormSlideout
-      :open="slideoutOpen"
-      :title="editingId ? 'Edit Document' : 'New Document'"
-      description="Source Markdown is stored exactly. Preview, highlight, and copy do not change it."
-      :submit-label="editingId ? 'Save' : 'Create'"
-      :pending="saving"
-      allow-fullscreen
-      size="wide"
-      @update:open="setSlideoutOpen"
-      @submit="save"
-    >
-      <FormSection title="Document">
-        <FormField label="Title" required>
-          <Input v-model="title" name="title" autocomplete="off" />
-        </FormField>
-        <MarkdownSource v-model="body" />
-      </FormSection>
-      <FormSection v-if="editingId && revisions.length" title="Revisions">
-        <DataList>
-          <DataListItem
-            v-for="revision in revisions"
-            :key="revision.id"
-            :title="revision.kind"
-            :description="revision.createdAt"
-          >
-            <template v-if="revision.id !== revisionId" #actions>
-              <Button
-                variant="outline"
-                size="sm"
-                shape="square"
-                :disabled="saving"
-                @click="restore(revision)"
-              >
-                Restore
-              </Button>
-            </template>
-          </DataListItem>
-        </DataList>
-      </FormSection>
-    </FormSlideout>
-
-    <FormSlideout
-      :open="filterSlideoutOpen"
-      title="Edit Saved View"
-      description="Changes apply to this copy. System Saved Views stay read-only."
-      submit-label="Save"
-      :pending="saving"
-      @update:open="filterSlideoutOpen = $event"
-      @submit="saveFilters"
-    >
-      <FormSection title="Filters">
-        <FormField label="Name" required>
-          <Input v-model="filterName" name="view-name" autocomplete="off" />
-        </FormField>
-        <FormField label="Folder">
-          <select v-model="filterFolder">
-            <option value="all">All</option>
-            <option value="unfiled">Unfiled</option>
-            <option v-for="folder in folderLabels" :key="folder.id" :value="folder.id">
-              {{ folder.path }}
-            </option>
-          </select>
-        </FormField>
-      </FormSection>
-    </FormSlideout>
   </PageBody>
 </template>

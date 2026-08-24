@@ -25,6 +25,7 @@ function document(folderId: string | null): LibraryDocument {
     body: '',
     revisionId: 'rev',
     folderId,
+    parentDocumentId: null,
     projectIds: [],
     tags: [],
     updatedAt: '',

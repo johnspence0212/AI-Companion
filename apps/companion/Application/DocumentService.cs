@@ -11,6 +11,7 @@ public sealed record DocumentDto(
     string Body,
     Guid RevisionId,
     Guid? FolderId,
+    Guid? ParentDocumentId,
     IReadOnlyList<Guid> ProjectIds,
     IReadOnlyList<string> Tags,
     DateTimeOffset UpdatedAt,
@@ -42,7 +43,8 @@ public sealed class DocumentService(EnterpriseDbContext db, ActivityService acti
         string? slug,
         IReadOnlyList<Guid>? projectIds,
         IReadOnlyList<string>? tags,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? parentDocumentId = null)
     {
         var now = time.GetUtcNow();
         var resolvedTitle = title.Trim();
@@ -73,6 +75,11 @@ public sealed class DocumentService(EnterpriseDbContext db, ActivityService acti
             _ = await RequireFolderAsync(folderKey, cancellationToken);
         }
 
+        if (parentDocumentId is Guid parentKey)
+        {
+            _ = await RequireParentDocumentAsync(parentKey, cancellationToken);
+        }
+
         var documentId = Guid.NewGuid();
         var revisionId = Guid.NewGuid();
         var document = new Document
@@ -82,6 +89,7 @@ public sealed class DocumentService(EnterpriseDbContext db, ActivityService acti
             Title = resolvedTitle,
             Slug = await UniqueDocumentSlugAsync(ownerUserId, slug, cancellationToken),
             FolderId = folderId,
+            ParentDocumentId = parentDocumentId,
             IsProjectContext = false,
             CreatedAt = now,
             UpdatedAt = now
@@ -478,6 +486,12 @@ public sealed class DocumentService(EnterpriseDbContext db, ActivityService acti
         await db.Set<Folder>().FirstOrDefaultAsync(item => item.Id == folderId && item.ArchivedAt == null, cancellationToken)
         ?? throw new KeyNotFoundException();
 
+    private async Task<Document> RequireParentDocumentAsync(Guid parentDocumentId, CancellationToken cancellationToken) =>
+        await db.Set<Document>().FirstOrDefaultAsync(
+            item => item.Id == parentDocumentId && !item.IsProjectContext && item.ArchivedAt == null,
+            cancellationToken)
+        ?? throw new KeyNotFoundException();
+
     private async Task<string?> LinkCoreAsync(Document document, Guid projectId, CancellationToken cancellationToken)
     {
         if (document.IsProjectContext)
@@ -572,6 +586,7 @@ public sealed class DocumentService(EnterpriseDbContext db, ActivityService acti
             document.CurrentRevision?.Body ?? string.Empty,
             document.CurrentRevisionId ?? Guid.Empty,
             document.FolderId,
+            document.ParentDocumentId,
             document.ProjectLinks.Select(link => link.ProjectId).ToArray(),
             document.TagLinks.Select(link => link.Tag.Name).ToArray(),
             document.UpdatedAt,

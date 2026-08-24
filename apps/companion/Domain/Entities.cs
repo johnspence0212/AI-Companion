@@ -79,9 +79,12 @@ public sealed class Document : MutableOwnedRecord
     public string? Slug { get; set; }
     public Guid? FolderId { get; set; }
     public Folder? Folder { get; set; }
+    public Guid? ParentDocumentId { get; set; }
+    public Document? ParentDocument { get; set; }
     public Guid? CurrentRevisionId { get; set; }
     public Revision? CurrentRevision { get; set; }
     public bool IsProjectContext { get; set; }
+    public ICollection<Document> Children { get; set; } = [];
     public ICollection<Revision> Revisions { get; set; } = [];
     public ICollection<DocumentProject> ProjectLinks { get; set; } = [];
     public ICollection<DocumentTag> TagLinks { get; set; } = [];

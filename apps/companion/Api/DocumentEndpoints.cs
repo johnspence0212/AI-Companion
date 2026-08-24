@@ -41,10 +41,18 @@ public static class DocumentEndpoints
                     }
 
                     var (userId, clientId) = ProjectService.ActorFrom(user);
-                    var created = await service.CreateAsync(
-                        userId, userId, clientId, request.Title, request.Body, request.FolderId,
-                        request.TemplateId, request.Slug, request.ProjectIds, request.Tags, cancellationToken);
-                    return Results.Created($"/api/v1/documents/{created.Id}", created);
+                    try
+                    {
+                        var created = await service.CreateAsync(
+                            userId, userId, clientId, request.Title, request.Body, request.FolderId,
+                            request.TemplateId, request.Slug, request.ProjectIds, request.Tags, cancellationToken,
+                            request.ParentDocumentId);
+                        return Results.Created($"/api/v1/documents/{created.Id}", created);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        return Results.NotFound();
+                    }
                 })
             .RequireAuthorization(CompanionPermissions.DocumentsManage);
         documents.MapPut(
@@ -181,6 +189,7 @@ public sealed record CreateDocumentRequest(
     [Required, StringLength(500)] string Title,
     string? Body,
     Guid? FolderId,
+    Guid? ParentDocumentId,
     Guid? TemplateId,
     [StringLength(128)] string? Slug,
     IReadOnlyList<Guid>? ProjectIds,

@@ -20,8 +20,10 @@ _Avoid_: Project summary, dashboard
 Durable Markdown knowledge in the user's independent library, including essays, notes,
 research, journals, and other authored material. A Document may support any number of
 Projects without being owned by them; its content history is an immutable sequence of
-revisions. The Document points at exactly one current revision.
-_Avoid_: Note, page
+revisions. The Document points at exactly one current revision. A Document may contain
+other Documents. Nesting a Document under another Document is the Library folder
+structure; the parent still has its own Markdown body. Library copy may say "note".
+_Avoid_: page, wiki
 
 **Revision**:
 An immutable snapshot of a Document's title and full Markdown body at an accepted write,
@@ -29,8 +31,9 @@ including save, append, or restore. Restoring older content creates a new Revisi
 _Avoid_: Diff, autosave snapshot
 
 **Folder**:
-A nested organizational container in the user's independent Document library. A regular
-Document may belong to at most one Folder.
+An explicit nested container still available to the API and MCP. The Library destination
+organizes by nested Documents instead of Folders. A regular Document may still belong to
+at most one Folder.
 _Avoid_: Project, label
 
 **Tag**:
@@ -90,9 +93,10 @@ _Avoid_: Sample data, onboarding tour
 The product shell. The rail destinations are Today, Inbox, Projects, and Library.
 Search is a fixed field in the top bar; submitting it opens a centered overlay with
 grouped results and greys out the destination behind it.
-Project and Library are three-pane. Issue, Document, and Inbox detail open in a right
-slide-out with optional fullscreen. Source Markdown is the editor; preview is a toggle.
-Saved Views are the list mode inside those destinations, not a separate home.
+Projects is three-pane. Library is a notes tree plus an inline Markdown editor; adding a
+note to a note nests it. Issue, Project Context, Inbox, and Search Document hits open in
+a right slide-out with optional fullscreen. Source Markdown is the editor; preview is a
+toggle. Saved Views are the list mode inside Projects, not a separate home.
 _Avoid_: Command palette, Views home, chat shell, Search rail destination
 
 **Daily Item**:

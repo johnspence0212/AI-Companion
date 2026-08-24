@@ -49,6 +49,11 @@ public sealed class CompanionModelContributor : IEntityModelContributor
                 .WithMany(folder => folder.Documents)
                 .HasForeignKey(document => document.FolderId)
                 .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(document => document.ParentDocument)
+                .WithMany(document => document.Children)
+                .HasForeignKey(document => document.ParentDocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(document => document.ParentDocumentId);
             entity.HasOne(document => document.CurrentRevision)
                 .WithMany()
                 .HasForeignKey(document => document.CurrentRevisionId)

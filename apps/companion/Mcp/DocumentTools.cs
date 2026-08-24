@@ -12,12 +12,13 @@ public sealed class DocumentTools(DocumentService documents, IHttpContextAccesso
     public Task<IReadOnlyList<DocumentDto>> List(CancellationToken cancellationToken) =>
         documents.ListAsync(includeArchived: false, cancellationToken);
 
-    [McpServerTool(Name = "documents_create"), Description("Create a library Document. Body is stored exactly, including fenced code.")]
+    [McpServerTool(Name = "documents_create"), Description("Create a library Document. Body is stored exactly, including fenced code. Pass parentDocumentId to nest it inside another Document.")]
     public Task<DocumentDto> Create(
         [Description("Document title")] string title,
         [Description("Markdown body")] string? body = null,
         [Description("Optional slug")] string? slug = null,
         [Description("Optional folder id")] string? folderId = null,
+        [Description("Optional parent Document id")] string? parentDocumentId = null,
         [Description("Optional template id")] string? templateId = null)
     {
         var (userId, clientId) = Actor();
@@ -32,7 +33,8 @@ public sealed class DocumentTools(DocumentService documents, IHttpContextAccesso
             slug,
             null,
             null,
-            CancellationToken.None);
+            CancellationToken.None,
+            ParseGuid(parentDocumentId));
     }
 
     [McpServerTool(Name = "documents_get"), Description("Get a Document by id or slug.")]

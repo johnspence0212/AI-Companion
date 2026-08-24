@@ -115,6 +115,58 @@ public sealed class DocumentLibraryTests(CustomWebApplicationFactory factory)
     }
 
     [Fact]
+    public async Task Create_WithParentDocument_NestsUnderThatDocument()
+    {
+        await factory.ResetDatabaseAsync();
+        var (client, csrf) = await CreateReadyAdminAsync();
+        using (client)
+        {
+            var parentResponse = await SendAsync(
+                client,
+                HttpMethod.Post,
+                "/api/v1/documents",
+                new { title = "Reading list", body = "Parent note" },
+                csrf);
+            Assert.Equal(HttpStatusCode.Created, parentResponse.StatusCode);
+            var parent = await parentResponse.Content.ReadFromJsonAsync<DocumentDto>(JsonOptions);
+            Assert.NotNull(parent);
+            Assert.Null(parent.ParentDocumentId);
+
+            var childResponse = await SendAsync(
+                client,
+                HttpMethod.Post,
+                "/api/v1/documents",
+                new { title = "Chapter one", body = "Nested note", parentDocumentId = parent.Id },
+                csrf);
+            Assert.Equal(HttpStatusCode.Created, childResponse.StatusCode);
+            var child = await childResponse.Content.ReadFromJsonAsync<DocumentDto>(JsonOptions);
+            Assert.NotNull(child);
+            Assert.Equal(parent.Id, child.ParentDocumentId);
+
+            var listed = await client.GetFromJsonAsync<List<DocumentDto>>("/api/v1/documents", JsonOptions);
+            Assert.NotNull(listed);
+            Assert.Equal(parent.Id, listed.Single(item => item.Id == child.Id).ParentDocumentId);
+        }
+    }
+
+    [Fact]
+    public async Task Create_WithMissingParentDocument_ReturnsNotFound()
+    {
+        await factory.ResetDatabaseAsync();
+        var (client, csrf) = await CreateReadyAdminAsync();
+        using (client)
+        {
+            var response = await SendAsync(
+                client,
+                HttpMethod.Post,
+                "/api/v1/documents",
+                new { title = "Orphan", body = "", parentDocumentId = Guid.NewGuid() },
+                csrf);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+    }
+
+    [Fact]
     public async Task Mcp_CanCreateAndRestoreFencedCode()
     {
         await factory.ResetDatabaseAsync();

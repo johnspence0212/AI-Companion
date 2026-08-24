@@ -75,6 +75,7 @@ export {
   WorkbenchComposer,
   WorkbenchSection,
   WorkbenchSearch,
+  NotesTree,
   MarkdownSource,
   SavedViewBar,
 } from './chrome'
