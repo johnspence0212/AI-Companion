@@ -59,7 +59,7 @@ Skill: `.cursor/skills/add-shadcn-component/`
 
 ## Public primitives
 
-Button, Input, Label, Separator, Sheet (+ parts), Sidebar (+ common parts), Skeleton, Tooltip (+ parts).
+Button, Input, Label, Separator, Dialog (+ parts), Sheet (+ parts), Sidebar (+ common parts), Skeleton, Tooltip (+ parts).
 
 Button shapes: default `shape="circle"` (pill/icon); use `shape="square"` for labeled primary actions (`Add user`, `Add role`).
 
@@ -69,23 +69,24 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ## App chrome (compose these in views)
 
-| Component                                             | Role                                              |
-| ----------------------------------------------------- | ------------------------------------------------- |
-| `PageBody`                                            | `page` padding or `workbench` fill layout         |
-| `PageHeader`                                          | Eyebrow, title, description, top-right actions    |
-| `StatusMessage`                                       | Error / muted / success text                      |
-| `FormPanel`                                           | Auth/profile card form shell                      |
-| `FormSlideout` / `FormSection` / `FormField`          | Create/edit Sheet forms                           |
-| `MultiSelect`                                         | Multi-value selector for forms                    |
-| `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                                 |
-| `DataTable`                                           | Dense bordered tables                             |
-| `WorkbenchPanes`                                      | Connected panes (nav / list / detail), not cards  |
-| `WorkbenchComposer`                                   | Compact capture/add/search bar inside a pane      |
-| `WorkbenchSection`                                    | Named group inside a pane (Carryover, results)    |
-| `MarkdownSource`                                      | Source Markdown editor with preview/copy          |
-| `SavedViewBar`                                        | System/user Saved View picker inside destinations |
-| `SurfaceCard`                                         | Simple linked/static surface cards                |
-| `GuestShell` / `AppShell` / `AppSidebar` / `UserMenu` | Layout shells                                     |
+| Component                                             | Role                                               |
+| ----------------------------------------------------- | -------------------------------------------------- |
+| `PageBody`                                            | `page` padding or `workbench` fill layout          |
+| `PageHeader`                                          | Eyebrow, title, description, top-right actions     |
+| `StatusMessage`                                       | Error / muted / success text                       |
+| `FormPanel`                                           | Auth/profile card form shell                       |
+| `FormSlideout` / `FormSection` / `FormField`          | Create/edit Sheet forms                            |
+| `MultiSelect`                                         | Multi-value selector for forms                     |
+| `DataList` / `DataListItem` / `DataListEmpty`         | Admin list panels                                  |
+| `DataTable`                                           | Dense bordered tables                              |
+| `WorkbenchPanes`                                      | Connected panes (nav / list / detail), not cards   |
+| `WorkbenchComposer`                                   | Compact capture/add/search bar inside a pane       |
+| `WorkbenchSearch`                                     | Fixed top-bar search that opens a centered overlay |
+| `WorkbenchSection`                                    | Named group inside a pane (Carryover, results)     |
+| `MarkdownSource`                                      | Source Markdown editor with preview/copy           |
+| `SavedViewBar`                                        | System/user Saved View picker inside destinations  |
+| `SurfaceCard`                                         | Simple linked/static surface cards                 |
+| `GuestShell` / `AppShell` / `AppSidebar` / `UserMenu` | Layout shells                                      |
 
 ## Approved recipes
 
@@ -106,7 +107,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ### Workbench destination
 
-`PageBody variant="workbench"` → `WorkbenchPanes` filling the remaining height. The shell breadcrumb is the destination name; do not repeat it as a page hero. Projects and Library are three-pane. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox and Search start with `WorkbenchComposer`. `SavedViewBar` is a compact toolbar, not a second list. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
+`PageBody variant="workbench"` → `WorkbenchPanes` filling the remaining height. The shell breadcrumb is the destination name; do not repeat it as a page hero. Projects and Library are three-pane. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox starts with `WorkbenchComposer`. Search lives in the top bar (`WorkbenchSearch`) and opens a centered overlay for results — it is not a rail destination. `SavedViewBar` is a compact toolbar, not a second list. Open Document, Project Context, Issue, or Inbox detail in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 

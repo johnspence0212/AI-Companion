@@ -15,6 +15,14 @@ export { Textarea } from './textarea'
 export { Label } from './label'
 export { Separator } from './separator'
 export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogOverlay,
+  DialogTitle,
+} from './dialog'
+export {
   Sheet,
   SheetClose,
   SheetContent,
@@ -66,6 +74,7 @@ export {
   WorkbenchPanes,
   WorkbenchComposer,
   WorkbenchSection,
+  WorkbenchSearch,
   MarkdownSource,
   SavedViewBar,
 } from './chrome'

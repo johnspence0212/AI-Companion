@@ -87,11 +87,13 @@ workspace is not blank. It is ordinary Project data, not demo seed.
 _Avoid_: Sample data, onboarding tour
 
 **Workbench**:
-The product shell. The rail destinations are Today, Inbox, Projects, Library, and Search.
+The product shell. The rail destinations are Today, Inbox, Projects, and Library.
+Search is a fixed field in the top bar; submitting it opens a centered overlay with
+grouped results and greys out the destination behind it.
 Project and Library are three-pane. Issue, Document, and Inbox detail open in a right
 slide-out with optional fullscreen. Source Markdown is the editor; preview is a toggle.
 Saved Views are the list mode inside those destinations, not a separate home.
-_Avoid_: Command palette, Views home, chat shell
+_Avoid_: Command palette, Views home, chat shell, Search rail destination
 
 **Daily Item**:
 An ordered item on one Owner's user-local date. It is either a single Issue reference or

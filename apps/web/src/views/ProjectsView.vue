@@ -504,12 +504,7 @@ onMounted(() => {
         <template v-else>
           <WorkbenchSection :title="context?.title ?? 'Project Context'">
             <div class="p-3">
-              <MarkdownSource
-                v-if="context"
-                :model-value="context.body"
-                label="Source"
-                readonly
-              />
+              <MarkdownSource v-if="context" :model-value="context.body" label="Source" readonly />
             </div>
           </WorkbenchSection>
           <WorkbenchSection title="Recent Sessions">

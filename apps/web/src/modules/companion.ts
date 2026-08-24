@@ -1,4 +1,4 @@
-import { CalendarDays, FolderKanban, Inbox, Library, Search } from 'lucide-vue-next'
+import { CalendarDays, FolderKanban, Inbox, Library } from 'lucide-vue-next'
 import type { AppModule } from './registry'
 
 export const companionModule: AppModule = {
@@ -24,9 +24,7 @@ export const companionModule: AppModule = {
     },
     {
       path: '/search',
-      name: 'search',
-      component: () => import('@/views/SearchView.vue'),
-      meta: { requiresAuth: true, permission: 'search.read' },
+      redirect: '/',
     },
     {
       path: '/ai-clients',
@@ -40,6 +38,5 @@ export const companionModule: AppModule = {
     { label: 'Inbox', to: '/inbox', icon: Inbox, permission: 'inbox.read' },
     { label: 'Projects', to: '/projects', icon: FolderKanban, permission: 'projects.read' },
     { label: 'Library', to: '/library', icon: Library, permission: 'documents.read' },
-    { label: 'Search', to: '/search', icon: Search, permission: 'search.read' },
   ],
 }

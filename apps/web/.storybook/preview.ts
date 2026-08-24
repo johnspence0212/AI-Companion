@@ -31,7 +31,14 @@ const catalogueAdmin: User = {
   createdAt: '2026-01-01T00:00:00Z',
   lastLoginAt: '2026-08-15T00:00:00Z',
   roles: ['Admin'],
-  permissions: ['users.read', 'users.manage', 'roles.read', 'roles.manage', 'audit.read'],
+  permissions: [
+    'users.read',
+    'users.manage',
+    'roles.read',
+    'roles.manage',
+    'audit.read',
+    'search.read',
+  ],
 }
 
 setup((app) => {
