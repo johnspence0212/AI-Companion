@@ -4,7 +4,7 @@ const webPort = process.env.WEB_PORT ?? '5173'
 const apiPort = process.env.API_PORT ?? '5000'
 const databaseConnection =
   process.env.Database__ConnectionString ??
-  'Host=localhost;Port=5432;Database=enterprisestarter_e2e;Username=postgres;Password=postgres'
+  'Host=localhost;Port=5432;Database=enterprise_starter_e2e;Username=enterprise_starter;Password=enterprise_starter'
 
 export default defineConfig({
   testDir: './tests',
