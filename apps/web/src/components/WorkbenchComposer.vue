@@ -9,12 +9,14 @@ withDefaults(
     submitLabel?: string
     pending?: boolean
     name?: string
+    variant?: 'toolbar' | 'plain'
   }>(),
   {
     placeholder: '',
     submitLabel: 'Add',
     pending: false,
     name: 'composer',
+    variant: 'toolbar',
   },
 )
 
@@ -29,7 +31,12 @@ function onSubmit() {
 </script>
 
 <template>
-  <form class="flex items-center gap-2 border-b px-3 py-2" @submit.prevent="onSubmit">
+  <form
+    :class="
+      variant === 'plain' ? 'flex items-center gap-2' : 'flex items-center gap-2 border-b px-3 py-2'
+    "
+    @submit.prevent="onSubmit"
+  >
     <Input
       :model-value="modelValue"
       :name="name"

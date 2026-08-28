@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { documentsApi, type DocumentRevision, type LibraryDocument } from '@/api/documentsApi'
+import { onDocumentsChanged } from '@/lib/libraryEvents'
 import { ancestorNoteIds, buildNotesTree } from '@/lib/notesTree'
 import {
   Button,
@@ -183,6 +184,12 @@ async function restore(revision: DocumentRevision) {
 onMounted(() => {
   void loadLibrary()
 })
+
+onUnmounted(
+  onDocumentsChanged(() => {
+    void loadLibrary()
+  }),
+)
 </script>
 
 <template>

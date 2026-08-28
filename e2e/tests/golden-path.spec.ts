@@ -99,6 +99,10 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   const ownerPage = await (await browser.newContext()).newPage()
   await loginNewMember(ownerPage, owner.email, owner.temporaryPassword, owner.readyMemberPassword)
   await expect(ownerPage.getByRole('link', { name: 'Today' })).toBeVisible()
+  await expect(
+    ownerPage.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Inbox' }),
+  ).toHaveCount(0)
+  await expect(ownerPage.getByRole('button', { name: 'Inbox' })).toBeVisible()
 
   await ownerPage.getByRole('link', { name: 'Projects' }).click()
   await ownerPage.getByRole('button', { name: 'New' }).first().click()
@@ -134,13 +138,15 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   await expect(dialogMarkdown(ownerPage, documentTitle)).toHaveValue(fence)
   await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Close', exact: true }).first().click()
 
-  await ownerPage.getByRole('link', { name: 'Inbox' }).click()
+  await ownerPage.getByRole('button', { name: 'Inbox' }).click()
+  await expect(ownerPage.getByRole('dialog', { name: 'Inbox' })).toBeVisible()
   await ownerPage.locator('input[name="inbox-capture"]').fill(`Process this thought ${token}`)
   await ownerPage.getByRole('button', { name: 'Capture' }).click()
-  await expect(ownerPage.getByText('Captured.')).toBeVisible()
+  await expect(dialog(ownerPage, 'Process Inbox Item').getByText('Captured.')).toBeVisible()
   await dialog(ownerPage, 'Process Inbox Item').locator('input[name="inbox-title"]').fill(inboxTitle)
   await dialog(ownerPage, 'Process Inbox Item').getByRole('button', { name: 'Process' }).click()
-  await expect(ownerPage.getByText('Processed to a Document.')).toBeVisible()
+  await expect(dialog(ownerPage, 'Inbox').getByText('Processed to a Document.')).toBeVisible()
+  await ownerPage.keyboard.press('Escape')
 
   await ownerPage.getByRole('link', { name: 'Library' }).click()
   await expect(ownerPage.getByText(inboxTitle, { exact: true })).toBeVisible()

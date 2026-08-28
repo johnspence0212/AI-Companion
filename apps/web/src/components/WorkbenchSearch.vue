@@ -140,7 +140,7 @@ function markdown() {
 </script>
 
 <template>
-  <div v-if="canSearch" class="flex min-w-0 flex-1 items-center justify-end gap-2">
+  <div v-if="canSearch" class="flex items-center gap-2">
     <Button
       type="button"
       variant="ghost"
@@ -151,7 +151,7 @@ function markdown() {
     >
       <Search />
     </Button>
-    <form class="relative hidden w-full max-w-sm md:block" @submit.prevent="runSearch">
+    <form class="relative hidden w-72 md:block lg:w-80" @submit.prevent="runSearch">
       <Search
         class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
       />

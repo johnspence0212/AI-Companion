@@ -81,7 +81,8 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 | `DataTable`                                           | Dense bordered tables                                    |
 | `WorkbenchPanes`                                      | Connected panes (nav / list / detail), not cards         |
 | `WorkbenchComposer`                                   | Compact capture/add/search bar inside a pane             |
-| `WorkbenchSearch`                                     | Fixed top-bar search that opens a centered overlay       |
+| `WorkbenchSearch`                                     | Centered top-bar search that opens a centered overlay    |
+| `WorkbenchInbox`                                      | Top-bar Inbox button that opens a centered overlay       |
 | `NotesTree`                                           | Nested notes list; adding a note inside another nests it |
 | `WorkbenchSection`                                    | Named group inside a pane (Carryover, results)           |
 | `MarkdownSource`                                      | Source Markdown editor with preview/copy                 |
@@ -108,7 +109,7 @@ Edit the **Brand** block in [`../styles/theme.css`](../styles/theme.css) (`--bra
 
 ### Workbench destination
 
-`PageBody variant="workbench"` → `WorkbenchPanes` filling the remaining height. The shell breadcrumb is the destination name; do not repeat it as a page hero. Projects is three-pane. Library is two-pane: `NotesTree` plus an inline `MarkdownSource` editor. Adding a note inside a note nests it; the parent note still has its own body. Today is `layout="home"` (Daily + Carryover/Blocked). Inbox starts with `WorkbenchComposer`. Search lives in the top bar (`WorkbenchSearch`) and opens a centered overlay for results — it is not a rail destination. `SavedViewBar` is a compact toolbar, not a second list. Open Project Context, Issue, Inbox, or Search Document hits in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
+`PageBody variant="workbench"` → `WorkbenchPanes` filling the remaining height. The shell breadcrumb is the destination name; do not repeat it as a page hero. Projects is three-pane. Library is two-pane: `NotesTree` plus an inline `MarkdownSource` editor. Adding a note inside a note nests it; the parent note still has its own body. Today is `layout="home"` (Daily + Carryover/Blocked). Search and Inbox live in the top bar (`WorkbenchSearch`, `WorkbenchInbox`) and open centered overlays — they are not rail destinations. `SavedViewBar` is a compact toolbar, not a second list. Open Project Context, Issue, Inbox, or Search Document hits in `FormSlideout` with `allowFullscreen` and `MarkdownSource`.
 
 If a screen doesn’t match a recipe, extend the library — don’t invent a one-off layout in the view.
 

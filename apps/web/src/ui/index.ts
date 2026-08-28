@@ -75,6 +75,7 @@ export {
   WorkbenchComposer,
   WorkbenchSection,
   WorkbenchSearch,
+  WorkbenchInbox,
   NotesTree,
   MarkdownSource,
   SavedViewBar,

@@ -1,4 +1,5 @@
 import { ApiError, httpClient } from '@/api/base/client'
+import { emitDocumentsChanged } from '@/lib/libraryEvents'
 import { isRecord } from '@/api/types/schema'
 
 export const INBOX_STATUSES = ['Open', 'Processed', 'Archived'] as const
@@ -61,8 +62,8 @@ export const inboxApi = {
       documentId?: string
       issueId?: string
     },
-  ): Promise<InboxItem> =>
-    parseItem(
+  ): Promise<InboxItem> => {
+    const item = parseItem(
       await httpClient.post(`/inbox/${id}/process`, {
         title: body.title,
         projectId: body.projectId,
@@ -71,7 +72,12 @@ export const inboxApi = {
         documentId: body.documentId,
         issueId: body.issueId,
       }),
-    ),
+    )
+    if (item.documentId) {
+      emitDocumentsChanged()
+    }
+    return item
+  },
   archive: async (id: string): Promise<InboxItem> =>
     parseItem(await httpClient.post(`/inbox/${id}/archive`)),
 }

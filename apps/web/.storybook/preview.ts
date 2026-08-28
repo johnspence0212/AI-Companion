@@ -38,6 +38,8 @@ const catalogueAdmin: User = {
     'roles.manage',
     'audit.read',
     'search.read',
+    'inbox.read',
+    'inbox.manage',
   ],
 }
 
