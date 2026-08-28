@@ -73,7 +73,7 @@ export const ThreePane: Story = {
           </template>
           <template #detail>
             <div class="p-3">
-              <StatusMessage>Source Markdown stays exact. Preview is a toggle.</StatusMessage>
+              <StatusMessage>Preview is the default. Source Markdown stays exact.</StatusMessage>
             </div>
           </template>
         </WorkbenchPanes>

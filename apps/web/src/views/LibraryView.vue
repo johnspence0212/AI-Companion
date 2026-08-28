@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { Archive, FilePen, Plus, Save, X } from 'lucide-vue-next'
 import { documentsApi, type DocumentRevision, type LibraryDocument } from '@/api/documentsApi'
 import { onDocumentsChanged } from '@/lib/libraryEvents'
 import { ancestorNoteIds, buildNotesTree } from '@/lib/notesTree'
@@ -8,8 +9,11 @@ import {
   DataList,
   DataListEmpty,
   DataListItem,
-  FormField,
-  Input,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   MarkdownSource,
   NotesTree,
   PageBody,
@@ -29,6 +33,8 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
+const editing = ref(false)
+const archiveOpen = ref(false)
 
 const selected = computed(
   () => documents.value.find((document) => document.id === selectedId.value) ?? null,
@@ -77,13 +83,14 @@ async function loadLibrary() {
   }
 }
 
-async function selectNote(document: LibraryDocument) {
+async function selectNote(document: LibraryDocument, edit = false) {
   if (selected.value && isDirty.value && selected.value.id !== document.id) {
     await saveCurrent()
   }
 
   notice.value = null
   applyDraft(document)
+  editing.value = edit
   revisions.value = await documentsApi.revisions(document.id)
 }
 
@@ -97,6 +104,11 @@ async function selectNoteById(id: string) {
 async function saveCurrent() {
   if (!selected.value) {
     return null
+  }
+
+  if (!isDirty.value) {
+    editing.value = false
+    return selected.value
   }
 
   const title = draftTitle.value.trim() || 'Untitled'
@@ -113,6 +125,7 @@ async function saveCurrent() {
     applyDraft(saved)
     revisions.value = await documentsApi.revisions(saved.id)
     notice.value = 'Saved.'
+    editing.value = false
     return saved
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to save note'
@@ -141,9 +154,44 @@ async function addNote(parentId?: string) {
       parentDocumentId: parentId ?? null,
     })
     await loadLibrary()
-    await selectNote(created)
+    await selectNote(created, true)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to create note'
+    throw e
+  } finally {
+    saving.value = false
+  }
+}
+
+function cancelEdit() {
+  if (selected.value) {
+    applyDraft(selected.value)
+  }
+
+  editing.value = false
+  error.value = null
+}
+
+async function archiveCurrent() {
+  if (!selected.value) {
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    await documentsApi.archive(selected.value.id)
+    archiveOpen.value = false
+    selectedId.value = null
+    revisions.value = []
+    draftTitle.value = ''
+    draftBody.value = ''
+    draftRevisionId.value = ''
+    editing.value = false
+    await loadLibrary()
+    notice.value = 'Archived.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to archive note'
     throw e
   } finally {
     saving.value = false
@@ -172,6 +220,7 @@ async function restore(revision: DocumentRevision) {
     await loadLibrary()
     applyDraft(restored)
     revisions.value = await documentsApi.revisions(restored.id)
+    editing.value = false
     notice.value = 'Restored a new current revision.'
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to restore revision'
@@ -197,9 +246,12 @@ onUnmounted(
     <StatusMessage v-if="error" class="px-4 py-2" tone="error">{{ error }}</StatusMessage>
     <StatusMessage v-else-if="notice" class="px-4 py-2" tone="success">{{ notice }}</StatusMessage>
 
-    <WorkbenchPanes list-title="Notes" :detail-title="selected?.title ?? 'Note'">
+    <WorkbenchPanes list-title="Notes">
       <template #list-actions>
-        <Button size="sm" shape="square" :disabled="saving" @click="addNote()">New note</Button>
+        <Button size="sm" shape="square" :disabled="saving" @click="addNote()">
+          <Plus />
+          Add Note
+        </Button>
       </template>
       <template #list>
         <DataList v-if="!loading && tree.length === 0" variant="flush">
@@ -217,27 +269,54 @@ onUnmounted(
         />
       </template>
 
-      <template #detail-actions>
-        <Button
-          v-if="selected"
-          size="sm"
-          shape="square"
-          :disabled="saving || !isDirty"
-          @click="saveCurrent"
-        >
-          Save
-        </Button>
-      </template>
       <template #detail>
         <DataList v-if="!selected" variant="flush">
           <DataListEmpty>Select a note or create one.</DataListEmpty>
         </DataList>
-        <div v-else class="space-y-3 p-3">
-          <FormField label="Title" required>
-            <Input v-model="draftTitle" name="title" autocomplete="off" />
-          </FormField>
-          <MarkdownSource v-model="draftBody" label="Note" />
-          <WorkbenchSection v-if="revisions.length" title="History">
+        <div v-else class="flex min-h-0 flex-1 flex-col">
+          <MarkdownSource
+            v-model="draftBody"
+            v-model:title="draftTitle"
+            variant="flush"
+            :preview="!editing"
+            :tags="selected.tags"
+          >
+            <template #toolbar>
+              <template v-if="!editing">
+                <Button variant="outline" size="sm" shape="square" @click="editing = true">
+                  <FilePen />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  shape="square"
+                  :disabled="saving"
+                  @click="archiveOpen = true"
+                >
+                  <Archive />
+                  Archive
+                </Button>
+              </template>
+              <template v-else>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  shape="square"
+                  :disabled="saving"
+                  @click="cancelEdit"
+                >
+                  <X />
+                  Cancel
+                </Button>
+                <Button size="sm" shape="square" :disabled="saving" @click="saveCurrent">
+                  <Save />
+                  Save
+                </Button>
+              </template>
+            </template>
+          </MarkdownSource>
+          <WorkbenchSection v-if="revisions.length" title="History" collapsible>
             <DataList variant="flush">
               <DataListItem
                 v-for="revision in revisions"
@@ -262,5 +341,22 @@ onUnmounted(
         </div>
       </template>
     </WorkbenchPanes>
+
+    <Dialog :open="archiveOpen" @update:open="archiveOpen = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Archive note</DialogTitle>
+          <DialogDescription>
+            Archive removes this note from the library. Content and history are kept.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="flex justify-end gap-2 px-6 pb-6">
+          <Button variant="outline" shape="square" :disabled="saving" @click="archiveOpen = false">
+            Cancel
+          </Button>
+          <Button shape="square" :disabled="saving" @click="archiveCurrent">Archive</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </PageBody>
 </template>

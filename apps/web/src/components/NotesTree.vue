@@ -37,7 +37,7 @@ function isExpanded(expandedIds: string[], id: string) {
       <div
         :class="
           cn(
-            'flex items-center gap-0.5 border-b py-0.5 pr-1',
+            'flex items-center gap-1 border-b py-1 pr-2',
             padClass(depth ?? 0),
             selectedId === item.id && 'bg-accent',
           )

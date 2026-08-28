@@ -25,16 +25,21 @@ export const buttonVariants = cva(
         'icon-sm': 'size-8',
         'icon-lg': 'size-10',
       },
-      /** circle = pill/icon; square = labeled primary actions (e.g. Add user) */
+      /** square = labeled actions; icon sizes stay circular via compoundVariants */
       shape: {
         circle: 'rounded-full',
         square: 'rounded-md',
       },
     },
+    compoundVariants: [
+      { size: 'icon', class: 'rounded-full' },
+      { size: 'icon-sm', class: 'rounded-full' },
+      { size: 'icon-lg', class: 'rounded-full' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      shape: 'circle',
+      shape: 'square',
     },
   },
 )

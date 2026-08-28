@@ -22,7 +22,7 @@ const meta = {
   args: {
     variant: 'default',
     size: 'default',
-    shape: 'circle',
+    shape: 'square',
   },
 } satisfies Meta<typeof Button>
 
@@ -79,10 +79,10 @@ export const Variants: Story = {
       <div class="flex flex-wrap items-center gap-3">
         <Button>Default</Button>
         <Button variant="secondary">Secondary</Button>
-        <Button variant="outline" shape="square">Outline</Button>
+        <Button variant="outline">Outline</Button>
         <Button variant="ghost">Ghost</Button>
         <Button variant="link">Link</Button>
-        <Button variant="destructive" shape="square">Destructive</Button>
+        <Button variant="destructive">Destructive</Button>
       </div>
     `,
   }),

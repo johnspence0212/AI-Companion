@@ -129,4 +129,7 @@ export const documentsApi = {
     parseDocument(
       await httpClient.post(`/documents/${id}/restore`, { expectedRevisionId, revisionId }),
     ),
+  archive: async (id: string): Promise<void> => {
+    await httpClient.post(`/documents/${id}/archive`)
+  },
 }

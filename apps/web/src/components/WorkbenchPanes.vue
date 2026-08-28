@@ -35,8 +35,8 @@ const showDetail = computed(() => typeof slots.detail === 'function')
         class="flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-b lg:w-56 lg:border-r lg:border-b-0"
         aria-label="Navigation pane"
       >
-        <header class="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
-          <h2 class="truncate text-sm font-medium">{{ navTitle }}</h2>
+        <header class="flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4">
+          <h2 class="truncate text-xl font-bold tracking-tight">{{ navTitle }}</h2>
           <div v-if="$slots['nav-actions']" class="flex shrink-0 items-center gap-2">
             <slot name="nav-actions" />
           </div>
@@ -61,9 +61,9 @@ const showDetail = computed(() => typeof slots.detail === 'function')
       >
         <header
           v-if="listTitle || $slots['list-actions']"
-          class="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3"
+          class="flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4"
         >
-          <h2 class="truncate text-sm font-medium">{{ listTitle }}</h2>
+          <h2 class="truncate text-xl font-bold tracking-tight">{{ listTitle }}</h2>
           <div v-if="$slots['list-actions']" class="flex shrink-0 items-center gap-2">
             <slot name="list-actions" />
           </div>
@@ -86,13 +86,19 @@ const showDetail = computed(() => typeof slots.detail === 'function')
         "
         aria-label="Detail pane"
       >
-        <header class="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
-          <h2 class="truncate text-sm font-medium">{{ detailTitle }}</h2>
+        <header
+          v-if="detailTitle || $slots['detail-actions']"
+          class="flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4"
+        >
+          <h2 v-if="detailTitle" class="min-w-0 truncate text-xl font-bold tracking-tight">
+            {{ detailTitle }}
+          </h2>
+          <div v-else class="min-w-0 flex-1" />
           <div v-if="$slots['detail-actions']" class="flex shrink-0 items-center gap-2">
             <slot name="detail-actions" />
           </div>
         </header>
-        <div class="min-h-0 flex-1 overflow-y-auto">
+        <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <slot name="detail" />
         </div>
       </section>

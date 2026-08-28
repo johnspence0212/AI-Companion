@@ -495,7 +495,9 @@ onMounted(() => {
       </template>
 
       <template #detail-actions>
-        <Button v-if="selected" size="sm" shape="square" @click="openContext">Edit</Button>
+        <Button v-if="selected" variant="outline" size="sm" shape="square" @click="openContext">
+          Edit
+        </Button>
       </template>
       <template #detail>
         <DataList v-if="!selected" variant="flush">
@@ -504,7 +506,12 @@ onMounted(() => {
         <template v-else>
           <WorkbenchSection :title="context?.title ?? 'Project Context'">
             <div class="p-3">
-              <MarkdownSource v-if="context" :model-value="context.body" label="Source" readonly />
+              <MarkdownSource
+                v-if="context"
+                :model-value="context.body"
+                readonly
+                hide-mode-toggle
+              />
             </div>
           </WorkbenchSection>
           <WorkbenchSection title="Recent Sessions">
@@ -575,7 +582,7 @@ onMounted(() => {
         <FormField label="Title">
           <Input v-model="contextTitle" name="context-title" autocomplete="off" />
         </FormField>
-        <MarkdownSource v-model="contextBody" />
+        <MarkdownSource v-model="contextBody" :preview="false" />
       </FormSection>
     </FormSlideout>
 
@@ -621,7 +628,7 @@ onMounted(() => {
         <FormField label="Title" required>
           <Input v-model="issueTitle" name="issue-title" autocomplete="off" />
         </FormField>
-        <MarkdownSource v-model="issueDescription" label="Description" />
+        <MarkdownSource v-model="issueDescription" label="Description" :preview="false" />
       </FormSection>
     </FormSlideout>
 

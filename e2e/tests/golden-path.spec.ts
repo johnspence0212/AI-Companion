@@ -84,7 +84,7 @@ async function loginNewMember(
 }
 
 test('owner walks the UI golden path; a second owner sees nothing', async ({ browser, page }) => {
-  test.setTimeout(60_000)
+  test.setTimeout(120_000)
   const token = `kalshiuipath${Date.now()}`
   const fence = `# Notes\n\n\`\`\`python\ndef greet(name):\n    return f"hello {name}"\n${token}\n\`\`\``
   const documentTitle = `UI fence ${token}`
@@ -109,33 +109,48 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   await dialog(ownerPage, 'New Project').locator('input[name="project-name"]').fill(projectName)
   await dialog(ownerPage, 'New Project').getByRole('button', { name: 'Create' }).click()
   await expect(ownerPage.getByText('Project created.')).toBeVisible()
-  await ownerPage.getByRole('button', { name: 'Edit', exact: true }).click()
+  await ownerPage
+    .getByRole('region', { name: 'Detail pane' })
+    .getByRole('button', { name: 'Edit', exact: true })
+    .click()
   await dialog(ownerPage, 'Project Context').locator('input[name="context-title"]').fill('Golden Context')
   await dialogMarkdown(ownerPage, 'Project Context').fill(fence)
   await dialog(ownerPage, 'Project Context').getByRole('button', { name: 'Save' }).click()
   await expect(ownerPage.getByText('Project Context saved.')).toBeVisible()
 
   await ownerPage.getByRole('link', { name: 'Library' }).click()
-  await ownerPage.getByRole('button', { name: 'New note' }).click()
+  await ownerPage.getByRole('button', { name: 'Add Note' }).click()
   await ownerPage.locator('input[name="title"]').fill(documentTitle)
   await ownerPage.locator('textarea[name="markdown"]').fill(fence)
   await ownerPage.getByRole('button', { name: 'Save' }).click()
   await expect(ownerPage.getByText('Saved.')).toBeVisible()
+  await ownerPage.getByRole('button', { name: 'Edit' }).click()
+  await expect(ownerPage.locator('textarea[name="markdown"]')).toHaveValue(fence)
+
+  await ownerPage.locator('textarea[name="markdown"]').fill(`${fence}\nMore.\n`)
+  await ownerPage.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await ownerPage.getByRole('button', { name: 'Edit' }).click()
   await expect(ownerPage.locator('textarea[name="markdown"]')).toHaveValue(fence)
 
   await ownerPage.locator('textarea[name="markdown"]').fill(`${fence}\nMore.\n`)
   await ownerPage.getByRole('button', { name: 'Save' }).click()
+  await ownerPage.getByRole('button', { name: 'Edit' }).click()
+  await ownerPage.getByText('History', { exact: true }).click()
   await expect(ownerPage.getByRole('button', { name: 'Restore' })).toHaveCount(2)
   await ownerPage.getByRole('button', { name: 'Restore' }).first().click()
   await expect(ownerPage.getByText('Restored a new current revision.')).toBeVisible()
+  await ownerPage.getByRole('button', { name: 'Edit' }).click()
   await expect(ownerPage.locator('textarea[name="markdown"]')).toHaveValue(fence)
 
   await ownerPage.getByRole('textbox', { name: 'Search' }).fill(token)
   await ownerPage.getByRole('textbox', { name: 'Search' }).press('Enter')
   await expect(ownerPage.getByRole('dialog', { name: 'Search' })).toBeVisible()
   await dialog(ownerPage, 'Search').getByText(documentTitle, { exact: true }).click()
-  await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Source' }).click()
+  await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Edit', exact: true }).click()
   await expect(dialogMarkdown(ownerPage, documentTitle)).toHaveValue(fence)
+  await expect(dialog(ownerPage, documentTitle).getByRole('button', { name: 'Cancel', exact: true })).toBeVisible()
+  await expect(dialog(ownerPage, documentTitle).getByRole('button', { name: 'Save' })).toBeVisible()
+  await expect(dialog(ownerPage, documentTitle).getByRole('button', { name: 'Preview' })).toHaveCount(0)
   await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Close', exact: true }).first().click()
 
   await ownerPage.getByRole('button', { name: 'Inbox' }).click()

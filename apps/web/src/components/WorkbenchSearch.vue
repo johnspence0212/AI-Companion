@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { Search } from 'lucide-vue-next'
+import { FilePen, Save, Search, X } from 'lucide-vue-next'
 import { documentsApi, type LibraryDocument } from '@/api/documentsApi'
 import { issuesApi, type Issue } from '@/api/issuesApi'
+import { emitDocumentsChanged } from '@/lib/libraryEvents'
 import { projectsApi, type ProjectContext } from '@/api/projectsApi'
 import { searchApi, type SearchHit, type SearchResults } from '@/api/searchApi'
 import { useAuthStore } from '@/stores/auth'
@@ -34,6 +35,12 @@ const openedDocument = ref<LibraryDocument | null>(null)
 const openedIssue = ref<Issue | null>(null)
 const openedContext = ref<ProjectContext | null>(null)
 const openedActivity = ref<SearchHit | null>(null)
+const editing = ref(false)
+const saving = ref(false)
+const draftTitle = ref('')
+const draftBody = ref('')
+const draftRevisionId = ref('')
+const canManageDocuments = computed(() => auth.hasPermission('documents.manage'))
 
 const groups = computed(() => [
   { key: 'projects', label: 'Projects', items: results.value?.projects ?? [] },
@@ -43,6 +50,14 @@ const groups = computed(() => [
 ])
 
 const visibleGroups = computed(() => groups.value.filter((group) => group.items.length > 0))
+
+watch(slideoutOpen, (open) => {
+  if (!open) {
+    editing.value = false
+    saving.value = false
+    error.value = null
+  }
+})
 
 watch(dialogOpen, async (open) => {
   if (!open) {
@@ -67,6 +82,18 @@ function resetOpened() {
   openedIssue.value = null
   openedContext.value = null
   openedActivity.value = null
+  editing.value = false
+  draftTitle.value = ''
+  draftBody.value = ''
+  draftRevisionId.value = ''
+}
+
+function applyDocument(document: LibraryDocument) {
+  openedDocument.value = document
+  draftTitle.value = document.title
+  draftBody.value = document.body
+  draftRevisionId.value = document.revisionId
+  slideoutTitle.value = document.title
 }
 
 async function runSearch() {
@@ -104,8 +131,7 @@ async function openHit(kind: string, hit: SearchHit) {
   error.value = null
   try {
     if (kind === 'documents') {
-      openedDocument.value = await documentsApi.get(hit.id)
-      slideoutTitle.value = openedDocument.value.title
+      applyDocument(await documentsApi.get(hit.id))
       return
     }
 
@@ -130,12 +156,50 @@ async function openHit(kind: string, hit: SearchHit) {
 
 function markdown() {
   return (
-    openedDocument.value?.body ??
-    openedIssue.value?.description ??
-    openedContext.value?.body ??
-    openedActivity.value?.title ??
-    ''
+    openedIssue.value?.description ?? openedContext.value?.body ?? openedActivity.value?.title ?? ''
   )
+}
+
+function cancelEdit() {
+  if (openedDocument.value) {
+    applyDocument(openedDocument.value)
+  }
+
+  editing.value = false
+  error.value = null
+}
+
+async function saveDocument() {
+  if (!openedDocument.value) {
+    return
+  }
+
+  if (
+    draftTitle.value === openedDocument.value.title &&
+    draftBody.value === openedDocument.value.body
+  ) {
+    editing.value = false
+    return
+  }
+
+  saving.value = true
+  error.value = null
+  try {
+    const saved = await documentsApi.save(
+      openedDocument.value.id,
+      draftRevisionId.value,
+      draftTitle.value.trim() || 'Untitled',
+      draftBody.value,
+    )
+    applyDocument(saved)
+    editing.value = false
+    emitDocumentsChanged()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to save note'
+    throw e
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -218,6 +282,7 @@ function markdown() {
       description="Search opens the shared slide-out. Source Markdown is unchanged."
       :show-submit="false"
       cancel-label="Close"
+      :pending="saving"
       allow-fullscreen
       size="wide"
       @update:open="slideoutOpen = $event"
@@ -227,7 +292,52 @@ function markdown() {
         <StatusMessage v-if="openedIssue">
           {{ openedIssue.status }} · {{ openedIssue.priority }}
         </StatusMessage>
-        <MarkdownSource :model-value="markdown()" readonly />
+        <MarkdownSource
+          v-if="openedDocument"
+          v-model="draftBody"
+          hide-mode-toggle
+          :preview="!editing"
+          :tags="openedDocument.tags"
+        >
+          <template v-if="canManageDocuments" #toolbar>
+            <template v-if="!editing">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                shape="square"
+                @click="editing = true"
+              >
+                <FilePen />
+                Edit
+              </Button>
+            </template>
+            <template v-else>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                shape="square"
+                :disabled="saving"
+                @click="cancelEdit"
+              >
+                <X />
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                shape="square"
+                :disabled="saving"
+                @click="saveDocument"
+              >
+                <Save />
+                Save
+              </Button>
+            </template>
+          </template>
+        </MarkdownSource>
+        <MarkdownSource v-else :model-value="markdown()" hide-mode-toggle readonly />
       </FormSection>
     </FormSlideout>
   </div>

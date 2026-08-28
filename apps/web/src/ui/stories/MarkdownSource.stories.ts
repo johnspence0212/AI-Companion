@@ -29,7 +29,7 @@ const token = "inside-the-fence"
       return { source }
     },
     template: `
-      <MarkdownSource v-model="source" label="Markdown" />
+      <MarkdownSource v-model="source" />
     `,
   }),
 }

@@ -105,10 +105,17 @@ function onSubmit() {
         </div>
 
         <SheetFooter class="border-t px-6 py-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" :disabled="pending" @click="setOpen(false)">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            shape="square"
+            :disabled="pending"
+            @click="setOpen(false)"
+          >
             {{ cancelLabel }}
           </Button>
-          <Button v-if="showSubmit" type="submit" :disabled="pending">
+          <Button v-if="showSubmit" type="submit" size="sm" shape="square" :disabled="pending">
             {{ submitLabel }}
           </Button>
         </SheetFooter>
