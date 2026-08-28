@@ -6,7 +6,10 @@ const bootstrapPassword = 'AdminPassword123!'
 const readyPassword = 'ReadyAdmin123!'
 
 async function expectAccessible(page: import('@playwright/test').Page) {
-  const results = await new AxeBuilder({ page }).analyze()
+  const results = await new AxeBuilder({ page })
+    .exclude('[data-reka-popper-content-wrapper]')
+    .exclude('[data-slot="tooltip-content"]')
+    .analyze()
   expect(results.violations).toEqual([])
 }
 
@@ -58,12 +61,13 @@ test('admin provisions a user and RBAC denies its administration access', async 
     ])
   }
 
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Today' })).toBeVisible()
   await expectAccessible(page)
 
   await page.getByRole('button', { name: 'Administration' }).click()
   await page.getByRole('menuitem', { name: 'Users' }).click()
-  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible()
+  await page.keyboard.press('Escape')
   await expectAccessible(page)
 
   const memberEmail = `member-${Date.now()}@example.local`

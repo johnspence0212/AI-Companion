@@ -223,6 +223,7 @@ function markdown() {
       @update:open="slideoutOpen = $event"
     >
       <FormSection title="Result">
+        <StatusMessage v-if="error" tone="error">{{ error }}</StatusMessage>
         <StatusMessage v-if="openedIssue">
           {{ openedIssue.status }} · {{ openedIssue.priority }}
         </StatusMessage>

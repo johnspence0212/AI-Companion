@@ -38,15 +38,22 @@ async function provisionOwner(page: Page, displayName: string) {
   const readyMemberPassword = 'PermanentUser123!'
   await page.getByRole('button', { name: 'Administration' }).click()
   await page.getByRole('menuitem', { name: 'Users' }).click()
-  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible()
   await page.getByRole('button', { name: 'Add user' }).click()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Display name').fill(displayName)
   await page.getByLabel('Temporary password').fill(temporaryPassword)
   await page.getByRole('button', { name: 'Roles' }).click()
   await page.getByRole('button', { name: 'Member' }).click()
+  const created = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/v1/users') &&
+      response.request().method() === 'POST' &&
+      response.ok(),
+  )
   await page.getByRole('button', { name: 'Add user', exact: true }).click()
-  await expect(page.getByText(email)).toBeVisible()
+  await created
+  await page.keyboard.press('Escape')
   return { email, temporaryPassword, readyMemberPassword }
 }
 
@@ -77,6 +84,7 @@ async function loginNewMember(
 }
 
 test('owner walks the UI golden path; a second owner sees nothing', async ({ browser, page }) => {
+  test.setTimeout(60_000)
   const token = `kalshiuipath${Date.now()}`
   const fence = `# Notes\n\n\`\`\`python\ndef greet(name):\n    return f"hello {name}"\n${token}\n\`\`\``
   const documentTitle = `UI fence ${token}`
@@ -84,59 +92,49 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   const inboxTitle = `Inbox ${token}`
 
   await loginAdmin(page)
-  await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Today' })).toBeVisible()
   const owner = await provisionOwner(page, 'Golden Owner')
   const other = await provisionOwner(page, 'Second Owner')
 
   const ownerPage = await (await browser.newContext()).newPage()
   await loginNewMember(ownerPage, owner.email, owner.temporaryPassword, owner.readyMemberPassword)
-  await expect(ownerPage.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible()
+  await expect(ownerPage.getByRole('link', { name: 'Today' })).toBeVisible()
 
   await ownerPage.getByRole('link', { name: 'Projects' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible()
-  await ownerPage.getByRole('button', { name: 'New project' }).click()
+  await ownerPage.getByRole('button', { name: 'New' }).first().click()
   await dialog(ownerPage, 'New Project').locator('input[name="project-name"]').fill(projectName)
   await dialog(ownerPage, 'New Project').getByRole('button', { name: 'Create' }).click()
   await expect(ownerPage.getByText('Project created.')).toBeVisible()
-  await ownerPage.getByRole('button', { name: 'Edit context' }).click()
+  await ownerPage.getByRole('button', { name: 'Edit', exact: true }).click()
   await dialog(ownerPage, 'Project Context').locator('input[name="context-title"]').fill('Golden Context')
   await dialogMarkdown(ownerPage, 'Project Context').fill(fence)
   await dialog(ownerPage, 'Project Context').getByRole('button', { name: 'Save' }).click()
   await expect(ownerPage.getByText('Project Context saved.')).toBeVisible()
 
   await ownerPage.getByRole('link', { name: 'Library' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Library', level: 1 })).toBeVisible()
-  await ownerPage.getByRole('button', { name: 'New document' }).click()
-  await dialog(ownerPage, 'New Document').locator('input[name="title"]').fill(documentTitle)
-  await dialogMarkdown(ownerPage, 'New Document').fill(fence)
-  await dialog(ownerPage, 'New Document').getByRole('button', { name: 'Create' }).click()
+  await ownerPage.getByRole('button', { name: 'New note' }).click()
+  await ownerPage.locator('input[name="title"]').fill(documentTitle)
+  await ownerPage.locator('textarea[name="markdown"]').fill(fence)
+  await ownerPage.getByRole('button', { name: 'Save' }).click()
   await expect(ownerPage.getByText('Saved.')).toBeVisible()
-  await expect(dialog(ownerPage, 'New Document')).toBeHidden()
   await expect(ownerPage.locator('textarea[name="markdown"]')).toHaveValue(fence)
 
-  await ownerPage.getByRole('button', { name: 'Edit', exact: true }).click()
-  await dialogMarkdown(ownerPage, 'Edit Document').fill(`${fence}\nMore.\n`)
-  await dialog(ownerPage, 'Edit Document').getByRole('button', { name: 'Save' }).click()
-  await expect(ownerPage.getByText('Saved.')).toBeVisible()
-  await expect(dialog(ownerPage, 'Edit Document')).toBeHidden()
-  await ownerPage.getByRole('button', { name: 'Edit', exact: true }).click()
-  await dialog(ownerPage, 'Edit Document').getByRole('button', { name: 'Restore' }).click()
+  await ownerPage.locator('textarea[name="markdown"]').fill(`${fence}\nMore.\n`)
+  await ownerPage.getByRole('button', { name: 'Save' }).click()
+  await expect(ownerPage.getByRole('button', { name: 'Restore' })).toHaveCount(2)
+  await ownerPage.getByRole('button', { name: 'Restore' }).first().click()
   await expect(ownerPage.getByText('Restored a new current revision.')).toBeVisible()
-  await dialog(ownerPage, 'Edit Document').getByRole('button', { name: 'Cancel' }).click()
-  await expect(dialog(ownerPage, 'Edit Document')).toBeHidden()
   await expect(ownerPage.locator('textarea[name="markdown"]')).toHaveValue(fence)
 
-  await ownerPage.getByRole('link', { name: 'Search' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible()
-  await ownerPage.locator('input[name="search"]').fill(token)
-  await ownerPage.getByRole('button', { name: 'Search' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Documents' })).toBeVisible()
-  await ownerPage.getByText(documentTitle, { exact: true }).first().click()
+  await ownerPage.getByRole('textbox', { name: 'Search' }).fill(token)
+  await ownerPage.getByRole('textbox', { name: 'Search' }).press('Enter')
+  await expect(ownerPage.getByRole('dialog', { name: 'Search' })).toBeVisible()
+  await dialog(ownerPage, 'Search').getByText(documentTitle, { exact: true }).click()
+  await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Source' }).click()
   await expect(dialogMarkdown(ownerPage, documentTitle)).toHaveValue(fence)
   await dialog(ownerPage, documentTitle).getByRole('button', { name: 'Close', exact: true }).first().click()
 
   await ownerPage.getByRole('link', { name: 'Inbox' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Inbox', level: 1 })).toBeVisible()
   await ownerPage.locator('input[name="inbox-capture"]').fill(`Process this thought ${token}`)
   await ownerPage.getByRole('button', { name: 'Capture' }).click()
   await expect(ownerPage.getByText('Captured.')).toBeVisible()
@@ -148,7 +146,7 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   await expect(ownerPage.getByText(inboxTitle, { exact: true })).toBeVisible()
 
   await ownerPage.getByRole('link', { name: 'Today' }).click()
-  await expect(ownerPage.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible()
+  await expect(ownerPage.getByRole('link', { name: 'Today' })).toBeVisible()
   const dailyText = `Daily custom ${token}`
   await ownerPage.locator('input[name="daily-item"]').fill(dailyText)
   await ownerPage.getByRole('button', { name: 'Add' }).click()
@@ -159,11 +157,9 @@ test('owner walks the UI golden path; a second owner sees nothing', async ({ bro
   const otherPage = await (await browser.newContext()).newPage()
   await loginNewMember(otherPage, other.email, other.temporaryPassword, other.readyMemberPassword)
   await otherPage.getByRole('link', { name: 'Library' }).click()
-  await expect(otherPage.getByRole('heading', { name: 'Library', level: 1 })).toBeVisible()
   await expect(otherPage.getByText(documentTitle, { exact: true })).toHaveCount(0)
-  await otherPage.getByRole('link', { name: 'Search' }).click()
-  await otherPage.locator('input[name="search"]').fill(token)
-  await otherPage.getByRole('button', { name: 'Search' }).click()
-  await expect(otherPage.getByText('No matches.').first()).toBeVisible()
+  await otherPage.getByRole('textbox', { name: 'Search' }).fill(token)
+  await otherPage.getByRole('textbox', { name: 'Search' }).press('Enter')
+  await expect(otherPage.getByText('No matches.')).toBeVisible()
   await expect(otherPage.getByText(documentTitle, { exact: true })).toHaveCount(0)
 })

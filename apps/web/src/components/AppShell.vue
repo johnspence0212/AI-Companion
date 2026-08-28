@@ -77,6 +77,9 @@ const breadcrumbs = computed(() => {
             >
               {{ crumb.label }}
             </span>
+            <h1 v-else-if="breadcrumbs.length === 1" class="truncate text-sm font-medium">
+              {{ crumb.label }}
+            </h1>
             <span v-else class="truncate font-medium">
               {{ crumb.label }}
             </span>
